@@ -1,0 +1,17 @@
+{
+  "name": "songo",
+  "version": "2.0.0",
+  "description": "Songo — jeu de mancala camerounais (solo, local, en ligne)",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  },
+  "dependencies": {
+    "express": "^4.21.2",
+    "socket.io": "^4.8.1"
+  }
+}
