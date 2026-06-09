@@ -9,7 +9,10 @@ const P2 = [7, 8, 9, 10, 11, 12];
 
 const app = express();
 const server = http.createServer(app);
-const io = new Server(server, { cors: { origin: '*' } });
+const io = new Server(server, {
+  cors: { origin: '*' },
+  transports: ['websocket', 'polling']
+});
 
 app.use(express.static(path.join(__dirname, 'public')));
 
@@ -99,6 +102,16 @@ function broadcastRoom(room) {
 
 io.on('connection', (socket) => {
   socket.on('create', (cb) => {
+    const prev = socket.data.room;
+    if (prev) {
+      const old = rooms.get(prev);
+      if (old) {
+        if (old.players[1] === socket.id) old.players[1] = null;
+        if (old.players[2] === socket.id) old.players[2] = null;
+        if (!old.players[1] && !old.players[2]) rooms.delete(prev);
+      }
+      socket.leave(prev);
+    }
     let code;
     do { code = genCode(); } while (rooms.has(code));
     const room = {
@@ -112,11 +125,21 @@ io.on('connection', (socket) => {
     socket.join(code);
     socket.data.room = code;
     socket.data.player = 1;
-    cb({ ok: true, code, player: 1 });
+    cb({ ok: true, code, player: 1, state: roomState(room) });
     broadcastRoom(room);
   });
 
   socket.on('join', (code, cb) => {
+    const prev = socket.data.room;
+    if (prev) {
+      const old = rooms.get(prev);
+      if (old) {
+        if (old.players[1] === socket.id) old.players[1] = null;
+        if (old.players[2] === socket.id) old.players[2] = null;
+        if (!old.players[1] && !old.players[2]) rooms.delete(prev);
+      }
+      socket.leave(prev);
+    }
     const room = rooms.get((code || '').toUpperCase());
     if (!room) return cb({ ok: false, error: 'Salle introuvable' });
     if (room.players[2]) return cb({ ok: false, error: 'Salle pleine' });
@@ -125,7 +148,7 @@ io.on('connection', (socket) => {
     socket.join(room.code);
     socket.data.room = room.code;
     socket.data.player = 2;
-    cb({ ok: true, code: room.code, player: 2 });
+    cb({ ok: true, code: room.code, player: 2, state: roomState(room) });
     broadcastRoom(room);
   });
 
@@ -138,27 +161,33 @@ io.on('connection', (socket) => {
     if (room.turn !== player) return cb && cb({ ok: false, error: 'Pas votre tour' });
     if (!own(pit, player) || !room.B[pit]) return cb && cb({ ok: false, error: 'Coup invalide' });
 
+    const seeds = room.B[pit];
     const result = applyMove(room.B, pit, player);
     if (!result.ok) return cb && cb({ ok: false, error: 'Coup invalide' });
 
     const end = checkEnd(room.B);
     if (end.over) {
       room.over = true;
-      io.to(code).emit('move', { pit, player, ...result, turn: room.turn, over: true, scores: end.scores });
-      broadcastRoom(room);
+      io.to(code).emit('move', {
+        pit, player, seeds, ...result,
+        turn: room.turn, over: true,
+        B: [...room.B], scores: end.scores
+      });
       return cb && cb({ ok: true });
     }
 
     if (!result.extra) room.turn = player === 1 ? 2 : 1;
-    io.to(code).emit('move', { pit, player, ...result, turn: room.turn, over: false });
-    broadcastRoom(room);
+    io.to(code).emit('move', {
+      pit, player, seeds, ...result,
+      turn: room.turn, over: false, B: [...room.B]
+    });
     cb && cb({ ok: true });
   });
 
   socket.on('rematch', () => {
     const code = socket.data.room;
     const room = code && rooms.get(code);
-    if (!room || socket.data.player !== 1) return;
+    if (!room || !room.players[1] || !room.players[2]) return;
     room.B = newBoard();
     room.turn = 1;
     room.over = false;

@@ -135,6 +135,8 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 <div id="lobby" class="overlay hidden">
   <div class="lobby-box">
     <h2 id="lobby-title">En ligne</h2>
+    <p id="conn-status" class="wait" style="margin-bottom:10px">Connexion…</p>
+    <p class="wait" style="font-size:11px;margin-bottom:12px">Les deux joueurs doivent ouvrir <b>la même adresse</b> (même site web).</p>
     <div id="lobby-create">
       <p class="wait">Créez une salle et partagez le code</p>
       <button class="btn" onclick="createRoom()">Créer une salle</button>
@@ -142,7 +144,9 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
     <div id="lobby-waiting" class="hidden">
       <p class="wait">Code de la salle :</p>
       <div class="room-code" id="room-code"></div>
-      <p class="wait">En attente d'un adversaire…</p>
+      <p class="wait">Partagez ce code avec votre ami</p>
+      <p class="wait" style="font-size:11px;margin-top:6px;word-break:break-all" id="share-url"></p>
+      <p class="wait" style="margin-top:8px">En attente d'un adversaire…</p>
     </div>
     <div id="lobby-join">
       <p class="wait" style="margin-top:1rem">Ou rejoindre une salle</p>
@@ -201,7 +205,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 const P1S=6,P2S=13,P1=[0,1,2,3,4,5],P2=[7,8,9,10,11,12];
 const C1='#F5D08A',C2='#88BBFF',CG='#80EE80';
 let B=[],turn=1,over=false,busy=false,diff=1,actx;
-let mode='ai',myPlayer=1,socket=null,roomCode=null;
+let mode='ai',myPlayer=1,socket=null,roomCode=null,pendingState=null;
 
 function init(){B=Array(14).fill(4);B[P1S]=0;B[P2S]=0}
 function opp(i){return 12-i}
@@ -210,7 +214,15 @@ function own(i,p){return p===1?P1.includes(i):P2.includes(i)}
 function gs(p){return p===1?P1S:P2S}
 function wt(ms){return new Promise(r=>setTimeout(r,ms))}
 
+function flipped(){return mode==='online'&&myPlayer===2}
 function gEl(idx){
+  if(flipped()){
+    if(idx===P2S)return document.getElementById('styo');
+    if(idx===P1S)return document.getElementById('stai');
+    if(idx>=7&&idx<=12)return document.getElementById('ryo').children[idx-7];
+    if(idx>=0&&idx<=5)return document.getElementById('rai').children[idx];
+    return null;
+  }
   if(idx===P1S)return document.getElementById('styo');
   if(idx===P2S)return document.getElementById('stai');
   if(idx>=0&&idx<=5)return document.getElementById('ryo').children[idx];
@@ -232,17 +244,28 @@ function mkD(n,col){
   return h+'</div>';
 }
 function bindPit(d,idx,p){
-  d.onclick=()=>click(idx);
+  d.onclick=(e)=>{e.preventDefault();click(idx)};
   d.onmouseenter=()=>{if(!busy)shPath(idx,p)};
   d.onmouseleave=clrH;
-  d.addEventListener('touchstart',()=>{if(!busy)shPath(idx,p)},{passive:true});
+  d.addEventListener('touchstart',(e)=>{if(!busy){shPath(idx,p)}},{passive:true});
   d.addEventListener('touchend',()=>setTimeout(clrH,400),{passive:true});
 }
+function pitCol(idx){return(flipped()?(P2.includes(idx)?C2:C1):(idx<=5?C1:C2))}
 function uc(idx){
-  if(idx===P1S){document.getElementById('svyo').textContent=B[P1S];const sc=document.getElementById('scyo');sc.textContent=B[P1S];ta(sc,'scb');return}
-  if(idx===P2S){document.getElementById('svai').textContent=B[P2S];const sc=document.getElementById('scai');sc.textContent=B[P2S];ta(sc,'scb');return}
+  if(idx===P1S||idx===P2S){
+    const mine=flipped()?P2S:P1S,opp=flipped()?P1S:P2S;
+    document.getElementById('svyo').textContent=B[mine];
+    document.getElementById('svai').textContent=B[opp];
+    const scY=document.getElementById('scyo'),scA=document.getElementById('scai');
+    scY.textContent=B[mine];scA.textContent=B[opp];
+    ta(scY,'scb');ta(scA,'scb');return;
+  }
   const el=gEl(idx);
-  if(el&&el.classList.contains('pit')){const c=idx<=5?C1:C2;el.innerHTML=mkD(B[idx],c)+(idx<=5?'<span class="plb">'+(idx+1)+'</span>':'');}
+  if(el&&el.classList.contains('pit')){
+    const c=pitCol(idx);
+    const lbl=(mode!=='ai'&&((flipped()&&P2.includes(idx))||(!flipped()&&idx<=5)))?'<span class="plb">'+(P2.includes(idx)?idx-6:idx+1)+'</span>':'';
+    el.innerHTML=mkD(B[idx],c)+lbl;
+  }
 }
 function ta(el,cls){if(!el)return;el.classList.remove(cls);void el.offsetWidth;el.classList.add(cls);el.addEventListener('animationend',()=>el.classList.remove(cls),{once:true})}
 function fl(el,txt,col){if(!el)return;const l=document.createElement('span');l.className='flb';l.style.color=col;l.textContent=txt;el.appendChild(l);setTimeout(()=>l.remove(),620)}
@@ -301,9 +324,12 @@ function pName(p){if(mode==='ai')return p===1?'Vous':'Ordinateur';if(mode==='loc
 function activePlayer(){return turn}
 function canPlay(p){if(over||busy)return false;if(mode==='ai')return p===1&&turn===1;if(mode==='local')return turn===p;if(mode==='online')return turn===p&&p===myPlayer;return false}
 
-async function animM(pi,p,skipBusy){
+async function animM(pi,p,opts){
+  const skipBusy=opts&&opts.skipBusy;
+  const seeds=opts&&opts.seeds!==undefined?opts.seeds:B[pi];
+  if(!seeds){if(!skipBusy)busy=false;return{ex:false,cap:false}}
   if(!skipBusy)busy=true;
-  const seeds=B[pi],spd=seeds<=6?215:seeds<=12?170:seeds<=20?130:90;
+  const spd=seeds<=6?215:seeds<=12?170:seeds<=20?130:90;
   const col=p===1?C1:C2,rc=p===1?'ar':'ara';
   setInf('<span class="sd" style="background:'+col+'"></span> <b>'+seeds+'</b> graine'+(seeds>1?'s':'')+'…');
   const se=gEl(pi);if(se)se.classList.add(p===1?'sp':'sa');
@@ -337,28 +363,28 @@ async function click(idx){
 
   if(mode==='online'){
     socket.emit('move',idx,res=>{
-      if(!res||!res.ok){busy=false;rend(false);setInf('Coup invalide');}
+      if(!res||!res.ok){busy=false;rend();setInf(res&&res.error?res.error:'Coup invalide');}
     });
     return;
   }
 
-  const r=await animM(idx,p);
+  const r=await animM(idx,p,{});
   chkEnd();if(over){busy=false;return;}
-  if(r.ex){setInf('<span style="color:'+(p===1?C1:C2)+'">▶</span> '+pName(p)+' rejoue !');turn=p;busy=false;rend(false)}
+  if(r.ex){turn=p;busy=false;rend();setInf('<span style="color:'+(p===1?C1:C2)+'">▶</span> '+pName(p)+' rejoue !')}
   else if(mode==='ai'&&p===1){turn=2;rend(false);setInf('<span class="td"></span><span class="td"></span><span class="td"></span>');await wt(diff===1?380:diff===2?600:850);await runAI()}
-  else{turn=p===1?2:1;busy=false;rend(false);setInf('<span style="color:'+(turn===1?C1:C2)+'">▶</span> Tour de '+pName(turn))}
+  else{turn=p===1?2:1;busy=false;rend();setTurnInf()}
 }
 
 async function runAI(){
   if(over||mode!=='ai')return;
-  const m=aip();if(m===null){turn=1;busy=false;rend(false);setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !');return}
+  const m=aip();if(m===null){turn=1;busy=false;rend();setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !');return}
   const se=gEl(m);if(se)se.classList.add('sa');
   setInf('<span class="sd" style="background:'+C2+'"></span> Fosse n°'+(m-6)+' — '+B[m]+' graine'+(B[m]>1?'s':'')+'');
   await wt(380);
-  const r=await animM(m,2);
+  const r=await animM(m,2,{});
   chkEnd();if(over){busy=false;return;}
   if(r.ex){setInf('<span style="color:'+C2+'">▶</span> L\'ordi rejoue…');await wt(diff===1?280:diff===2?450:680);await runAI()}
-  else{turn=1;busy=false;rend(false);setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !')}
+  else{turn=1;busy=false;rend();setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !')}
 }
 
 function chkEnd(scores){
@@ -402,37 +428,57 @@ function updateLabels(){
   }else if(mode==='local'){
     document.getElementById('lb-yo').textContent='Joueur 1';document.getElementById('lb-ai').textContent='Joueur 2';
     document.getElementById('slb-yo').textContent='J1';document.getElementById('slb-ai').textContent='J2';
+    document.getElementById('legend').innerHTML='<span><span class="ld" style="background:#F5D08A"></span>J1 (bas)</span><span><span class="ld" style="background:#88BBFF"></span>J2 (haut)</span><span><span class="ld" style="background:#80EE80"></span>Capture</span><span><span class="ld" style="background:#FFB830"></span>Tour bonus</span>';
   }else{
-    const yo=myPlayer===1?'Vous':'Adversaire',ai=myPlayer===1?'Adversaire':'Vous';
-    document.getElementById('lb-yo').textContent=yo;document.getElementById('lb-ai').textContent=ai;
-    document.getElementById('slb-yo').textContent=myPlayer===1?'VOUS':'ADV';
-    document.getElementById('slb-ai').textContent=myPlayer===1?'ADV':'VOUS';
+    document.getElementById('lb-yo').textContent='Vous';
+    document.getElementById('lb-ai').textContent='Adversaire';
+    document.getElementById('slb-yo').textContent='VOUS';
+    document.getElementById('slb-ai').textContent='ADV';
+    const mine=myPlayer===2?'#88BBFF':'#F5D08A',adv=myPlayer===2?'#F5D08A':'#88BBFF';
+    document.getElementById('legend').innerHTML='<span><span class="ld" style="background:'+adv+'"></span>Adversaire (haut)</span><span><span class="ld" style="background:'+mine+'"></span>Vos fosses (bas)</span><span><span class="ld" style="background:#80EE80"></span>Capture</span><span><span class="ld" style="background:#FFB830"></span>Tour bonus</span>';
   }
 }
 
-function rend(full=true){
-  if(full)rendAll();
+function rendHdr(){
   const ap=activePlayer();
-  document.getElementById('cai').className='pcard'+(ap===2&&!over?' ap2':'');
-  document.getElementById('cyo').className='pcard'+(ap===1&&!over?' ap1':'');
+  if(mode==='online'){
+    const me=myPlayer,myCls=me===2?' ap2':' ap1',oppCls=me===2?' ap1':' ap2';
+    document.getElementById('cyo').className='pcard'+(ap===me&&!over?myCls:'');
+    document.getElementById('cai').className='pcard'+(ap!==me&&!over?oppCls:'');
+  }else{
+    document.getElementById('cyo').className='pcard'+(ap===1&&!over?' ap1':'');
+    document.getElementById('cai').className='pcard'+(ap===2&&!over?' ap2':'');
+  }
+}
+
+function rend(refreshPits){
+  if(refreshPits!==false)rendAll();
+  rendHdr();
+}
+
+function addPit(row,idx,player,label){
+  const d=document.createElement('div');d.className='pit';
+  const ok=canPlay(player)&&B[idx]>0;
+  const col=player===1?C1:C2;
+  d.innerHTML=mkD(B[idx],col)+(label?'<span class="plb">'+label+'</span>':'');
+  if(ok){d.classList.add(player===1?'can':'can2');bindPit(d,idx,player)}
+  row.appendChild(d);
 }
 
 function rendAll(){
-  document.getElementById('svyo').textContent=B[P1S];document.getElementById('svai').textContent=B[P2S];
-  document.getElementById('scyo').textContent=B[P1S];document.getElementById('scai').textContent=B[P2S];
+  const mine=flipped()?P2S:P1S,opp=flipped()?P1S:P2S;
+  document.getElementById('svyo').textContent=B[mine];
+  document.getElementById('svai').textContent=B[opp];
+  document.getElementById('scyo').textContent=B[mine];
+  document.getElementById('scai').textContent=B[opp];
   const ry=document.getElementById('ryo');ry.innerHTML='';
-  P1.forEach((idx,i)=>{
-    const d=document.createElement('div');d.className='pit';
-    const ok=canPlay(1)&&B[idx]>0;
-    if(ok){d.classList.add('can');bindPit(d,idx,1)}
-    d.innerHTML=mkD(B[idx],C1)+'<span class="plb">'+(i+1)+'</span>';ry.appendChild(d);
-  });
   const ra=document.getElementById('rai');ra.innerHTML='';
-  for(let i=12;i>=7;i--){
-    const d=document.createElement('div');d.className='pit';
-    const ok=canPlay(2)&&B[i]>0;
-    if(ok){d.classList.add('can2');bindPit(d,i,2)}
-    d.innerHTML=mkD(B[i],C2);ra.appendChild(d);
+  if(flipped()){
+    P2.forEach((idx,i)=>addPit(ry,idx,2,String(i+1)));
+    P1.forEach((idx,i)=>addPit(ra,idx,1,String(i+1)));
+  }else{
+    P1.forEach((idx,i)=>addPit(ry,idx,1,String(i+1)));
+    for(let i=12;i>=7;i--)addPit(ra,i,2,null);
   }
 }
 
@@ -440,12 +486,11 @@ function sd(d,btn){diff=d;document.querySelectorAll('.db').forEach(b=>b.classLis
 function tr(){document.getElementById('rp').classList.toggle('show')}
 
 function ng(){
-  if(mode==='online'&&socket&&myPlayer===1){socket.emit('rematch');return}
+  if(mode==='online'&&socket&&roomCode){socket.emit('rematch');return}
   init();turn=1;over=false;busy=false;
   document.getElementById('em').style.display='none';document.getElementById('em').textContent='';
-  clrH();rendAll();rend(false);
-  const col=turn===1?C1:C2;
-  setInf('<span style="color:'+col+'">▶</span> Tour de '+pName(turn)+' — cliquez pour jouer !');
+  clrH();rend();
+  setTurnInf();
 }
 
 function showGame(){
@@ -455,7 +500,31 @@ function showGame(){
   document.getElementById('diff-row').style.display=mode==='ai'?'flex':'none';
   const tags={ai:'🤖 Solo vs Ordinateur',local:'👥 Local à 2 joueurs',online:'🌐 En ligne — salle '+roomCode};
   document.getElementById('mode-tag').textContent=tags[mode]||'';
-  updateLabels();ng();
+  updateLabels();
+  if(mode==='online'){
+    document.getElementById('em').style.display='none';
+    busy=false;
+    if(B.length){rend();setTurnInf()}
+  }else ng();
+}
+
+function updateConnStatus(){
+  const el=document.getElementById('conn-status');
+  if(!el)return;
+  if(!socket){el.textContent='Non connecté';el.style.color='#e55';return}
+  if(socket.connected){el.textContent='● Connecté au serveur';el.style.color='#4a4'}
+  else{el.textContent='○ Reconnexion…';el.style.color='#c90'}
+}
+
+function getSocket(){
+  if(!socket){
+    socket=io({transports:['websocket','polling'],reconnection:true});
+    socket.on('connect',updateConnStatus);
+    socket.on('disconnect',updateConnStatus);
+    listenOnline();
+  }
+  updateConnStatus();
+  return socket;
 }
 
 function startMode(m){
@@ -465,8 +534,10 @@ function startMode(m){
     document.getElementById('lobby').classList.remove('hidden');
     document.getElementById('lobby-create').classList.remove('hidden');
     document.getElementById('lobby-waiting').classList.add('hidden');
+    document.getElementById('lobby-join').classList.remove('hidden');
     document.getElementById('lobby-err').textContent='';
-    if(!socket)socket=io();
+    document.getElementById('join-code').value='';
+    getSocket();
     return;
   }
   showGame();
@@ -481,68 +552,88 @@ function backToMenu(){
 }
 
 function createRoom(){
-  if(!socket)socket=io();
+  const s=getSocket();
   document.getElementById('lobby-err').textContent='';
-  socket.emit('create',res=>{
-    if(!res.ok){document.getElementById('lobby-err').textContent='Erreur de création';return}
+  if(!s.connected){document.getElementById('lobby-err').textContent='Connexion en cours…';s.once('connect',createRoom);return}
+  s.emit('create',res=>{
+    if(!res||!res.ok){document.getElementById('lobby-err').textContent='Erreur de création';return}
     myPlayer=1;roomCode=res.code;
     document.getElementById('lobby-create').classList.add('hidden');
     document.getElementById('lobby-waiting').classList.remove('hidden');
     document.getElementById('room-code').textContent=res.code;
-    listenOnline();
+    document.getElementById('share-url').textContent=location.origin;
+    if(res.state)applyState(res.state);
   });
 }
 
 function joinRoom(){
   const code=document.getElementById('join-code').value.trim().toUpperCase();
   if(code.length<4){document.getElementById('lobby-err').textContent='Entrez un code valide';return}
-  if(!socket)socket=io();
+  const s=getSocket();
   document.getElementById('lobby-err').textContent='';
-  socket.emit('join',code,res=>{
-    if(!res.ok){document.getElementById('lobby-err').textContent=res.error;return}
+  if(!s.connected){document.getElementById('lobby-err').textContent='Connexion en cours…';s.once('connect',joinRoom);return}
+  s.emit('join',code,res=>{
+    if(!res||!res.ok){document.getElementById('lobby-err').textContent=res.error||'Impossible de rejoindre';return}
     myPlayer=res.player;roomCode=res.code;
-    listenOnline();showGame();
+    if(res.state){applyState(res.state);updateLabels();showGame()}
   });
+}
+
+function setTurnInf(){
+  const me=mode==='online'?myPlayer:turn;
+  const col=turn===1?C1:C2;
+  if(mode==='local'&&turn===2)setInf('<span style="color:'+C2+'">▶</span> Joueur 2 — touchez les fosses <b>bleues en haut</b>');
+  else if(mode==='local'&&turn===1)setInf('<span style="color:'+C1+'">▶</span> Joueur 1 — touchez les fosses <b>dorées en bas</b>');
+  else if(turn===me)setInf('<span style="color:'+col+'">▶</span> À vous de jouer ! Touchez vos fosses en <b>bas</b>');
+  else setInf('<span class="td"></span><span class="td"></span><span class="td"></span> Tour de l\'adversaire…');
+}
+
+function applyState(st){
+  if(!st)return;
+  B=st.B.slice();turn=st.turn;over=st.over;roomCode=st.code;
+  if(!over){
+    document.getElementById('em').style.display='none';
+    document.getElementById('em').textContent='';
+  }
+  rend();
+  if(over&&st.scores){
+    B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;
+    chkEnd(st.scores);
+  }else if(!over)setTurnInf();
 }
 
 function listenOnline(){
   if(!socket._songo){socket._songo=true;
-    socket.on('state',async st=>{
+    socket.on('state',st=>{
       if(!st)return;
-      B=st.B;turn=st.turn;over=st.over;roomCode=st.code;
-      if(st.players&&st.players[1]&&st.players[2]&&document.getElementById('lobby-waiting')&&!document.getElementById('lobby-waiting').classList.contains('hidden')){
-        showGame();
+      if(busy){pendingState=st;return}
+      if(mode==='online'&&document.getElementById('game').classList.contains('hidden')&&st.players[1]&&st.players[2]){
+        applyState(st);updateLabels();showGame();return;
       }
-      rendAll();rend(false);
-      if(over&&st.scores){
-        B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;
-        chkEnd(st.scores);
-      }else if(!busy&&!over){
-        const col=turn===1?C1:C2;
-        if(turn===myPlayer)setInf('<span style="color:'+col+'">▶</span> À vous de jouer !');
-        else setInf('<span class="td"></span><span class="td"></span><span class="td"></span> Tour de l\'adversaire…');
-      }
+      applyState(st);
     });
     socket.on('move',async mv=>{
       if(!mv)return;
       busy=true;rend(false);
-      await animM(mv.pit,mv.player,true);
+      B[mv.pit]=mv.seeds;
+      await animM(mv.pit,mv.player,{skipBusy:true,seeds:mv.seeds});
+      if(mv.B)B=mv.B.slice();
       turn=mv.turn;
       if(mv.over){
         if(mv.scores){B[P1S]=mv.scores.p1;B[P2S]=mv.scores.p2}
+        over=true;rendAll();
         chkEnd(mv.scores);
       }else{
-        rend(false);
-        const col=turn===1?C1:C2;
-        if(turn===myPlayer)setInf('<span style="color:'+col+'">▶</span> À vous de jouer !');
-        else setInf('<span class="td"></span><span class="td"></span><span class="td"></span> Tour de l\'adversaire…');
+        over=false;rend();setTurnInf();
       }
-      busy=false;rend(false);
+      busy=false;
+      if(pendingState){const ps=pendingState;pendingState=null;applyState(ps)}
+      else rend();
     });
     socket.on('opponent_left',()=>{
-      over=true;busy=false;
+      over=true;busy=false;pendingState=null;
       document.getElementById('em').textContent='Adversaire déconnecté';document.getElementById('em').style.display='block';
-      setInf('Partie terminée');
+      setInf('Partie terminée');rend();
     });
   }
 }
