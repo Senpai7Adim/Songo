@@ -1,0 +1,7 @@
+<h2> 🎯 Règles du jeu</h2>
+<b>Objectif :</b> Accumuler le plus de graines dans votre grenier.<br>
+<b>Cliquez</b> une fosse pour distribuer ses graines une par une dans le sens antihoraire.<br>
+<b>Tour bonus ✨ :</b> si la dernière graine tombe dans votre grenier → rejouez !<br>
+<b>Capture 💚 :</b> dernière graine dans une fosse <em>vide</em> de votre côté + graines en face → vous capturez tout.<br>
+<b>Fin :</b> quand un côté se vide, chacun ramasse le reste. Le plus de graines gagne !<br>
+Par <strong> IFOU FOPA</strong>

@@ -3,6 +3,7 @@ const http = require('http');
 const { Server } = require('socket.io');
 const path = require('path');
 
+//IFOU FOPA ANGE - 24G2205
 const P1S = 6, P2S = 13;
 const P1 = [0, 1, 2, 3, 4, 5];
 const P2 = [7, 8, 9, 10, 11, 12];

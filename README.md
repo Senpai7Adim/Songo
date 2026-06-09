@@ -29,13 +29,14 @@ Ouvrez **http://localhost:3000** dans le navigateur (Firefox, Chrome, etc.).
 3. **Joueur 2** → En ligne → entre le code → Rejoindre.
 4. Joueur 1 commence. Chacun joue ses fosses **en bas** de son écran.
 
-## Règles du Songo
+- **Fin :** quand un côté se vide, chacun ramasse le reste. Le plus de graines gagne.
 
-- **Objectif :** accumuler le plus de graines dans votre grenier.
-- **Coup :** cliquez une fosse pour distribuer ses graines une par une dans le sens **antihoraire**.
-- **Tour bonus :** si la dernière graine tombe dans votre grenier → vous rejouez.
-- **Capture :** dernière graine dans une fosse vide de votre côté + graines en face → vous capturez tout.
-- **Fin :** quand un côté est vide, chacun ramasse le reste. Le plus de graines gagne.
+## Fonctionnement AJAX
+
+Les règles du jeu sont chargées dynamiquement via **AJAX (XMLHttpRequest)**. 
+- Au lieu d'être codées en dur dans le HTML, elles résident dans `public/rules.txt`.
+- La fonction `loadRules()` dans `index.html` récupère ce contenu de manière asynchrone lors du premier clic sur le bouton "Règles".
+- Cela permet une page plus légère au chargement initial et une meilleure séparation du contenu et de la logique.
 
 ## Déconnexion en ligne
 
@@ -72,7 +73,8 @@ Songo/
 ├── package.json
 ├── render.yaml        # Config Render
 ├── public/
-│   └── index.html     # Jeu (interface + logique client)
+│   ├── index.html     # Jeu (interface + logique client)
+│   └── rules.txt      # Contenu des règles (chargé via AJAX)
 └── README.md
 ```
 
