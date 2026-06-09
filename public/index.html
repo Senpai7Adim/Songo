@@ -90,6 +90,10 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 .leg{display:flex;gap:clamp(6px,2vw,10px);justify-content:center;font-size:clamp(10px,2.8vw,11px);color:var(--color-text-secondary);align-items:center;margin-bottom:0.55rem;flex-wrap:wrap;padding:0 4px}
 .ld{width:8px;height:8px;border-radius:50%;display:inline-block;margin-right:3px;vertical-align:middle}
 .mode-tag{text-align:center;font-size:clamp(10px,2.8vw,11px);color:var(--color-text-secondary);margin-bottom:0.5rem;padding:0 8px}
+.pause-banner{background:rgba(200,120,40,0.15);border:1px solid rgba(200,120,40,0.4);border-radius:var(--border-radius-md);padding:10px 14px;margin-bottom:0.65rem;text-align:center;font-size:13px;color:var(--color-text-primary);display:none}
+.pause-banner.show{display:block}
+.pause-banner .cd{font-size:22px;font-weight:600;color:#c87828;margin:6px 0}
+.pause-banner .sub{font-size:11px;color:var(--color-text-secondary)}
 @media(max-width:380px){
   :root{--seed-sz:4px;--seed-gap:1px}
   .leg{gap:5px 8px}
@@ -176,6 +180,11 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
     <span><span class="ld" style="background:#80EE80"></span>Capture</span>
     <span><span class="ld" style="background:#FFB830"></span>Tour bonus</span>
   </div>
+  <div id="pause-banner" class="pause-banner">
+    <div id="pause-title">Adversaire déconnecté</div>
+    <div class="cd" id="pause-cd">1:30</div>
+    <div class="sub" id="pause-sub">La partie reprendra s'il revient avant la fin du délai.</div>
+  </div>
   <div class="infobar" id="inf">Chargement…</div>
   <div class="board-wrap" id="bwrap">
     <div class="board">
@@ -206,6 +215,7 @@ const P1S=6,P2S=13,P1=[0,1,2,3,4,5],P2=[7,8,9,10,11,12];
 const C1='#F5D08A',C2='#88BBFF',CG='#80EE80';
 let B=[],turn=1,over=false,busy=false,diff=1,actx;
 let mode='ai',myPlayer=1,socket=null,roomCode=null,pendingState=null,pendingMove=null,lastMoveSeq=-1;
+let gamePaused=false,pauseTimer=null;
 
 function init(){B=Array(14).fill(4);B[P1S]=0;B[P2S]=0}
 function opp(i){return 12-i}
@@ -322,7 +332,7 @@ function aip(){return diff===1?aiEz():diff===2?aiMd():aiHd()}
 
 function pName(p){if(mode==='ai')return p===1?'Vous':'Ordinateur';if(mode==='local')return'Joueur '+p;return p===myPlayer?'Vous':'Adversaire'}
 function activePlayer(){return turn}
-function canPlay(p){if(over||busy)return false;if(mode==='ai')return p===1&&turn===1;if(mode==='local')return turn===p;if(mode==='online')return turn===p&&p===myPlayer;return false}
+function canPlay(p){if(over||busy||gamePaused)return false;if(mode==='ai')return p===1&&turn===1;if(mode==='local')return turn===p;if(mode==='online')return turn===p&&p===myPlayer;return false}
 
 async function animM(pi,p,opts){
   const skipBusy=opts&&opts.skipBusy;
@@ -536,7 +546,7 @@ function getSocket(){
       reconnectionDelay:1000,
       timeout:10000
     });
-    socket.on('connect',()=>{updateConnStatus();rejoinOnline();});
+    socket.on('connect',()=>{updateConnStatus();if(roomCode&&myPlayer)rejoinOnline();});
     socket.on('disconnect',()=>updateConnStatus());
     socket.on('connect_error',()=>{
       updateConnStatus('Serveur inaccessible — lancez : npm start');
@@ -563,7 +573,50 @@ function startMode(m){
   showGame();
 }
 
+function hidePauseBanner(){
+  gamePaused=false;
+  if(pauseTimer){clearInterval(pauseTimer);pauseTimer=null;}
+  const b=document.getElementById('pause-banner');
+  if(b)b.classList.remove('show');
+}
+
+function showPauseBanner(endsAt,slot){
+  gamePaused=true;
+  const b=document.getElementById('pause-banner');
+  const isMe=slot===myPlayer;
+  document.getElementById('pause-title').textContent=isMe
+    ?'Connexion perdue — reconnectez-vous'
+    :'Adversaire déconnecté';
+  document.getElementById('pause-sub').textContent=isMe
+    ?'Rouvrez la page ou attendez la reconnexion automatique. Code : '+roomCode
+    :'La partie reprendra s\'il revient avant la fin du délai.';
+  b.classList.add('show');
+  if(pauseTimer)clearInterval(pauseTimer);
+  function tick(){
+    const left=Math.max(0,endsAt-Date.now());
+    const s=Math.ceil(left/1000),m=Math.floor(s/60),sec=s%60;
+    document.getElementById('pause-cd').textContent=m+':'+(sec<10?'0':'')+sec;
+    if(left<=0&&pauseTimer){clearInterval(pauseTimer);pauseTimer=null;}
+  }
+  tick();
+  pauseTimer=setInterval(tick,500);
+  rend();
+}
+
+function handleOpponentLeft(data){
+  hidePauseBanner();clearSession();
+  over=true;busy=false;pendingState=null;pendingMove=null;
+  const reason=data&&data.reason;
+  let msg;
+  if(reason==='left')msg='L\'adversaire a quitté la partie.';
+  else if(reason==='timeout')msg='L\'adversaire n\'est pas revenu à temps.';
+  else msg='Adversaire déconnecté.';
+  document.getElementById('em').textContent=msg;document.getElementById('em').style.display='block';
+  setInf('Partie terminée');rend();
+}
+
 function backToMenu(){
+  hidePauseBanner();clearSession();
   if(socket&&roomCode){socket.emit('leave');roomCode=null}
   document.getElementById('game').classList.add('hidden');
   document.getElementById('lobby').classList.add('hidden');
@@ -584,6 +637,7 @@ function createRoom(){
     document.getElementById('room-code').textContent=res.code;
     document.getElementById('share-url').textContent=location.origin;
     if(res.state)applyState(res.state);
+    saveSession();
   });
 }
 
@@ -597,11 +651,12 @@ function joinRoom(){
   s.emit('join',code,res=>{
     if(!res||!res.ok){document.getElementById('lobby-err').textContent=res.error||'Impossible de rejoindre';return}
     myPlayer=res.player;roomCode=res.code;
-    if(res.state){lastMoveSeq=-1;applyState(res.state);updateLabels();showGame();}
+    if(res.state){lastMoveSeq=-1;applyState(res.state);updateLabels();showGame();saveSession();}
   });
 }
 
 function setTurnInf(){
+  if(gamePaused)return;
   const me=mode==='online'?myPlayer:turn;
   const col=turn===1?C1:C2;
   if(mode==='local'&&turn===2)setInf('<span style="color:'+C2+'">▶</span> Joueur 2 — touchez les fosses <b>bleues en haut</b>');
@@ -623,6 +678,8 @@ function applyState(st){
   if(!st)return;
   B=(st.B||[]).slice();turn=st.turn||1;over=!!st.over;roomCode=st.code||roomCode;
   if(st.moveSeq!==undefined)lastMoveSeq=st.moveSeq;
+  if(st.paused&&st.graceEndsAt)showPauseBanner(st.graceEndsAt,st.disconnectedSlot);
+  else if(!st.paused)hidePauseBanner();
   if(!over){
     document.getElementById('em').style.display='none';
     document.getElementById('em').textContent='';
@@ -663,18 +720,41 @@ async function handleOnlineMove(mv){
   }
 }
 
+function saveSession(){
+  if(mode==='online'&&roomCode&&myPlayer){
+    sessionStorage.setItem('songo',JSON.stringify({code:roomCode,player:myPlayer}));
+  }else sessionStorage.removeItem('songo');
+}
+
+function clearSession(){sessionStorage.removeItem('songo');}
+
 function rejoinOnline(){
   if(mode!=='online'||!roomCode||!myPlayer)return;
   const s=getSocket();
-  if(!s.connected)return;
+  if(!s||!s.connected)return;
   s.emit('rejoin',roomCode,myPlayer,res=>{
     if(res&&res.ok&&res.state){
       applyState(res.state);
       updateLabels();
+      saveSession();
       if(document.getElementById('game').classList.contains('hidden'))showGame();
+    }else if(res&&!res.ok&&res.error){
+      clearSession();
     }
   });
 }
+
+(function(){
+  try{
+    const raw=sessionStorage.getItem('songo');
+    if(!raw)return;
+    const s=JSON.parse(raw);
+    if(s.code&&s.player){
+      roomCode=s.code;myPlayer=s.player;mode='online';
+      window.addEventListener('load',()=>getSocket());
+    }
+  }catch(e){clearSession();}
+})();
 
 function listenOnline(){
   if(!socket._songo){socket._songo=true;
@@ -685,11 +765,16 @@ function listenOnline(){
       if(mode==='online')applyState(st);
     });
     socket.on('move',mv=>handleOnlineMove(mv));
-    socket.on('opponent_left',()=>{
-      over=true;busy=false;pendingState=null;
-      document.getElementById('em').textContent='Adversaire déconnecté';document.getElementById('em').style.display='block';
-      setInf('Partie terminée');rend();
+    socket.on('player_disconnected',d=>{
+      if(d&&d.graceEndsAt)showPauseBanner(d.graceEndsAt,d.slot);
+      else gamePaused=true;rend();
     });
+    socket.on('player_rejoined',()=>{
+      hidePauseBanner();
+      setInf('<span style="color:#4a4">●</span> Adversaire de retour — la partie reprend !');
+      setTurnInf();
+    });
+    socket.on('opponent_left',data=>handleOpponentLeft(data));
   }
 }
 let resizeT;

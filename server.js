@@ -19,6 +19,44 @@ const io = new Server(server, {
 app.use(express.static(path.join(__dirname, 'public')));
 
 const rooms = new Map();
+const DISCONNECT_GRACE_MS = 90000;
+
+function clearDisconnectTimer(room) {
+  if (!room) return;
+  if (room.disconnectTimer) {
+    clearTimeout(room.disconnectTimer);
+    room.disconnectTimer = null;
+  }
+  room.disconnectedSlot = null;
+  room.graceEndsAt = null;
+  room.paused = false;
+}
+
+function endRoom(room, reason) {
+  if (!room) return;
+  clearDisconnectTimer(room);
+  room.over = true;
+  io.to(room.code).emit('opponent_left', { reason });
+  broadcastRoom(room);
+}
+
+function startDisconnectGrace(room, slot) {
+  clearDisconnectTimer(room);
+  room.paused = true;
+  room.disconnectedSlot = slot;
+  room.graceEndsAt = Date.now() + DISCONNECT_GRACE_MS;
+  room.disconnectTimer = setTimeout(() => {
+    const r = rooms.get(room.code);
+    if (!r || r.over) return;
+    endRoom(r, 'timeout');
+  }, DISCONNECT_GRACE_MS);
+  io.to(room.code).emit('player_disconnected', {
+    slot,
+    graceMs: DISCONNECT_GRACE_MS,
+    graceEndsAt: room.graceEndsAt
+  });
+  broadcastRoom(room);
+}
 
 function newBoard() {
   const B = Array(14).fill(4);
@@ -91,6 +129,9 @@ function roomState(room) {
     turn: room.turn,
     over: room.over,
     moveSeq: room.moveSeq,
+    paused: !!room.paused,
+    disconnectedSlot: room.disconnectedSlot || null,
+    graceEndsAt: room.graceEndsAt || null,
     scores: room.over ? { p1: room.B[P1S], p2: room.B[P2S] } : null,
     players: { 1: !!room.players[1], 2: !!room.players[2] }
   };
@@ -107,24 +148,24 @@ function attachPlayer(socket, room, slot) {
   socket.data.player = slot;
 }
 
-function clearPlayer(socket) {
+function detachSocket(socket) {
   const code = socket.data.room;
-  if (!code) return null;
+  const slot = socket.data.player;
+  if (!code) return { room: null, slot: null };
   const room = rooms.get(code);
   if (room) {
     if (room.players[1] === socket.id) room.players[1] = null;
     if (room.players[2] === socket.id) room.players[2] = null;
-    if (!room.players[1] && !room.players[2]) rooms.delete(code);
   }
   socket.leave(code);
   socket.data.room = null;
   socket.data.player = null;
-  return room;
+  return { room, slot };
 }
 
 io.on('connection', (socket) => {
   socket.on('create', (cb) => {
-    clearPlayer(socket);
+    detachSocket(socket);
     let code;
     do { code = genCode(); } while (rooms.has(code));
     const room = {
@@ -133,6 +174,10 @@ io.on('connection', (socket) => {
       turn: 1,
       over: false,
       moveSeq: 0,
+      paused: false,
+      disconnectedSlot: null,
+      graceEndsAt: null,
+      disconnectTimer: null,
       players: { 1: null, 2: null }
     };
     rooms.set(code, room);
@@ -143,14 +188,19 @@ io.on('connection', (socket) => {
   });
 
   socket.on('join', (code, cb) => {
-    clearPlayer(socket);
+    detachSocket(socket);
     const room = rooms.get(String(code || '').toUpperCase());
     if (!room) return typeof cb === 'function' && cb({ ok: false, error: 'Salle introuvable' });
     if (!room.players[1]) return typeof cb === 'function' && cb({ ok: false, error: 'Salle invalide' });
+    if (room.over) return typeof cb === 'function' && cb({ ok: false, error: 'Partie terminée' });
+    if (room.paused && room.disconnectedSlot === 2) {
+      return typeof cb === 'function' && cb({ ok: false, error: 'Joueur 2 déconnecté — il peut revenir avec le même code' });
+    }
     if (room.players[2] && room.players[2] !== socket.id) {
       return typeof cb === 'function' && cb({ ok: false, error: 'Salle pleine' });
     }
     attachPlayer(socket, room, 2);
+    clearDisconnectTimer(room);
     const state = roomState(room);
     if (typeof cb === 'function') cb({ ok: true, code: room.code, player: 2, state });
     broadcastRoom(room);
@@ -168,7 +218,13 @@ io.on('connection', (socket) => {
     if (slot === 2 && room.players[2] && room.players[2] !== socket.id) {
       return typeof cb === 'function' && cb({ ok: false, error: 'Place déjà prise' });
     }
+    if (room.over) return typeof cb === 'function' && cb({ ok: false, error: 'Partie terminée' });
+    const wasReconnect = room.paused && room.disconnectedSlot === slot;
     attachPlayer(socket, room, slot);
+    if (wasReconnect) {
+      clearDisconnectTimer(room);
+      io.to(room.code).emit('player_rejoined', { slot });
+    }
     if (typeof cb === 'function') cb({ ok: true, player: slot, state: roomState(room) });
     broadcastRoom(room);
   });
@@ -182,6 +238,8 @@ io.on('connection', (socket) => {
 
     if (!room) return fail('Pas de salle — rejoignez la partie');
     if (room.over) return fail('Partie terminée');
+    if (room.paused) return fail('Partie en pause — adversaire déconnecté');
+    if (!room.players[1] || !room.players[2]) return fail('Adversaire absent');
     if (!player) return fail('Joueur non identifié');
     if (room.players[player] !== socket.id) return fail('Session expirée — rejoignez la salle');
     if (room.turn !== player) return fail('Pas votre tour');
@@ -218,7 +276,8 @@ io.on('connection', (socket) => {
   socket.on('rematch', () => {
     const code = socket.data.room;
     const room = code && rooms.get(code);
-    if (!room || !room.players[1] || !room.players[2]) return;
+    if (!room || !room.players[1] || !room.players[2] || room.paused) return;
+    clearDisconnectTimer(room);
     room.B = newBoard();
     room.turn = 1;
     room.over = false;
@@ -227,26 +286,26 @@ io.on('connection', (socket) => {
   });
 
   socket.on('leave', () => {
-    const room = clearPlayer(socket);
-    if (room && (room.players[1] || room.players[2])) {
-      room.over = true;
-      io.to(room.code).emit('opponent_left');
-      broadcastRoom(room);
+    const { room } = detachSocket(socket);
+    if (!room) return;
+    if (!room.players[1] && !room.players[2]) {
+      clearDisconnectTimer(room);
+      rooms.delete(room.code);
+      return;
     }
+    endRoom(room, 'left');
   });
 
   socket.on('disconnect', () => {
-    const code = socket.data.room;
-    if (!code) return;
-    const room = rooms.get(code);
-    if (!room) return;
-    if (room.players[1] === socket.id) room.players[1] = null;
-    if (room.players[2] === socket.id) room.players[2] = null;
-    if (!room.players[1] && !room.players[2]) rooms.delete(code);
-    else {
-      room.over = true;
-      io.to(code).emit('opponent_left');
+    const { room, slot } = detachSocket(socket);
+    if (!room || !slot || room.over) return;
+    const other = slot === 1 ? 2 : 1;
+    if (!room.players[other]) {
+      clearDisconnectTimer(room);
+      rooms.delete(room.code);
+      return;
     }
+    startDisconnectGrace(room, slot);
   });
 });
 
