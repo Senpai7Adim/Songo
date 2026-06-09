@@ -11,7 +11,9 @@ const app = express();
 const server = http.createServer(app);
 const io = new Server(server, {
   cors: { origin: '*' },
-  transports: ['websocket', 'polling']
+  transports: ['websocket', 'polling'],
+  pingTimeout: 60000,
+  pingInterval: 25000
 });
 
 app.use(express.static(path.join(__dirname, 'public')));
@@ -52,11 +54,11 @@ function opp(i) {
 }
 
 function applyMove(B, pi, p) {
-  const seeds = B[pi];
-  if (!seeds || !own(pi, p)) return { ok: false };
+  let s = B[pi];
+  if (!s || !own(pi, p)) return { ok: false };
   B[pi] = 0;
   let c = pi;
-  while (seeds--) { c = nx(c, p); B[c]++; }
+  while (s--) { c = nx(c, p); B[c]++; }
   const extra = c === gs(p);
   let captured = 0;
   if (!extra && own(c, p) && B[c] === 1) {
@@ -85,14 +87,12 @@ function checkEnd(B) {
 function roomState(room) {
   return {
     code: room.code,
-    B: room.B,
+    B: [...room.B],
     turn: room.turn,
     over: room.over,
+    moveSeq: room.moveSeq,
     scores: room.over ? { p1: room.B[P1S], p2: room.B[P2S] } : null,
-    players: {
-      1: !!room.players[1],
-      2: !!room.players[2]
-    }
+    players: { 1: !!room.players[1], 2: !!room.players[2] }
   };
 }
 
@@ -100,18 +100,31 @@ function broadcastRoom(room) {
   io.to(room.code).emit('state', roomState(room));
 }
 
+function attachPlayer(socket, room, slot) {
+  room.players[slot] = socket.id;
+  socket.join(room.code);
+  socket.data.room = room.code;
+  socket.data.player = slot;
+}
+
+function clearPlayer(socket) {
+  const code = socket.data.room;
+  if (!code) return null;
+  const room = rooms.get(code);
+  if (room) {
+    if (room.players[1] === socket.id) room.players[1] = null;
+    if (room.players[2] === socket.id) room.players[2] = null;
+    if (!room.players[1] && !room.players[2]) rooms.delete(code);
+  }
+  socket.leave(code);
+  socket.data.room = null;
+  socket.data.player = null;
+  return room;
+}
+
 io.on('connection', (socket) => {
   socket.on('create', (cb) => {
-    const prev = socket.data.room;
-    if (prev) {
-      const old = rooms.get(prev);
-      if (old) {
-        if (old.players[1] === socket.id) old.players[1] = null;
-        if (old.players[2] === socket.id) old.players[2] = null;
-        if (!old.players[1] && !old.players[2]) rooms.delete(prev);
-      }
-      socket.leave(prev);
-    }
+    clearPlayer(socket);
     let code;
     do { code = genCode(); } while (rooms.has(code));
     const room = {
@@ -119,69 +132,87 @@ io.on('connection', (socket) => {
       B: newBoard(),
       turn: 1,
       over: false,
-      players: { 1: socket.id, 2: null }
+      moveSeq: 0,
+      players: { 1: null, 2: null }
     };
     rooms.set(code, room);
-    socket.join(code);
-    socket.data.room = code;
-    socket.data.player = 1;
-    cb({ ok: true, code, player: 1, state: roomState(room) });
+    attachPlayer(socket, room, 1);
+    const state = roomState(room);
+    if (typeof cb === 'function') cb({ ok: true, code, player: 1, state });
     broadcastRoom(room);
   });
 
   socket.on('join', (code, cb) => {
-    const prev = socket.data.room;
-    if (prev) {
-      const old = rooms.get(prev);
-      if (old) {
-        if (old.players[1] === socket.id) old.players[1] = null;
-        if (old.players[2] === socket.id) old.players[2] = null;
-        if (!old.players[1] && !old.players[2]) rooms.delete(prev);
-      }
-      socket.leave(prev);
+    clearPlayer(socket);
+    const room = rooms.get(String(code || '').toUpperCase());
+    if (!room) return typeof cb === 'function' && cb({ ok: false, error: 'Salle introuvable' });
+    if (!room.players[1]) return typeof cb === 'function' && cb({ ok: false, error: 'Salle invalide' });
+    if (room.players[2] && room.players[2] !== socket.id) {
+      return typeof cb === 'function' && cb({ ok: false, error: 'Salle pleine' });
     }
-    const room = rooms.get((code || '').toUpperCase());
-    if (!room) return cb({ ok: false, error: 'Salle introuvable' });
-    if (room.players[2]) return cb({ ok: false, error: 'Salle pleine' });
-    if (room.over) return cb({ ok: false, error: 'Partie terminée' });
-    room.players[2] = socket.id;
-    socket.join(room.code);
-    socket.data.room = room.code;
-    socket.data.player = 2;
-    cb({ ok: true, code: room.code, player: 2, state: roomState(room) });
+    attachPlayer(socket, room, 2);
+    const state = roomState(room);
+    if (typeof cb === 'function') cb({ ok: true, code: room.code, player: 2, state });
+    broadcastRoom(room);
+  });
+
+  socket.on('rejoin', (code, player, cb) => {
+    const room = rooms.get(String(code || '').toUpperCase());
+    const slot = Number(player);
+    if (!room || (slot !== 1 && slot !== 2)) {
+      return typeof cb === 'function' && cb({ ok: false, error: 'Salle introuvable' });
+    }
+    if (slot === 1 && room.players[1] && room.players[1] !== socket.id) {
+      return typeof cb === 'function' && cb({ ok: false, error: 'Place déjà prise' });
+    }
+    if (slot === 2 && room.players[2] && room.players[2] !== socket.id) {
+      return typeof cb === 'function' && cb({ ok: false, error: 'Place déjà prise' });
+    }
+    attachPlayer(socket, room, slot);
+    if (typeof cb === 'function') cb({ ok: true, player: slot, state: roomState(room) });
     broadcastRoom(room);
   });
 
   socket.on('move', (pit, cb) => {
+    const pitIdx = Number(pit);
     const code = socket.data.room;
     const room = code && rooms.get(code);
-    if (!room) return cb && cb({ ok: false, error: 'Pas de salle' });
-    if (room.over) return cb && cb({ ok: false, error: 'Partie terminée' });
     const player = socket.data.player;
-    if (room.turn !== player) return cb && cb({ ok: false, error: 'Pas votre tour' });
-    if (!own(pit, player) || !room.B[pit]) return cb && cb({ ok: false, error: 'Coup invalide' });
+    const fail = (error) => typeof cb === 'function' && cb({ ok: false, error });
 
-    const seeds = room.B[pit];
-    const result = applyMove(room.B, pit, player);
-    if (!result.ok) return cb && cb({ ok: false, error: 'Coup invalide' });
-
-    const end = checkEnd(room.B);
-    if (end.over) {
-      room.over = true;
-      io.to(code).emit('move', {
-        pit, player, seeds, ...result,
-        turn: room.turn, over: true,
-        B: [...room.B], scores: end.scores
-      });
-      return cb && cb({ ok: true });
+    if (!room) return fail('Pas de salle — rejoignez la partie');
+    if (room.over) return fail('Partie terminée');
+    if (!player) return fail('Joueur non identifié');
+    if (room.players[player] !== socket.id) return fail('Session expirée — rejoignez la salle');
+    if (room.turn !== player) return fail('Pas votre tour');
+    if (!Number.isInteger(pitIdx) || !own(pitIdx, player) || !room.B[pitIdx]) {
+      return fail('Coup invalide');
     }
 
-    if (!result.extra) room.turn = player === 1 ? 2 : 1;
-    io.to(code).emit('move', {
-      pit, player, seeds, ...result,
-      turn: room.turn, over: false, B: [...room.B]
-    });
-    cb && cb({ ok: true });
+    const seeds = room.B[pitIdx];
+    const result = applyMove(room.B, pitIdx, player);
+    if (!result.ok) return fail('Coup invalide');
+
+    const end = checkEnd(room.B);
+    if (!end.over && !result.extra) room.turn = player === 1 ? 2 : 1;
+    if (end.over) room.over = true;
+
+    room.moveSeq += 1;
+    const move = {
+      seq: room.moveSeq,
+      pit: pitIdx,
+      player,
+      seeds,
+      extra: result.extra,
+      captured: result.captured,
+      turn: room.turn,
+      over: end.over,
+      B: [...room.B],
+      scores: end.over ? end.scores : null
+    };
+
+    io.to(code).emit('move', move);
+    if (typeof cb === 'function') cb({ ok: true, move });
   });
 
   socket.on('rematch', () => {
@@ -191,26 +222,17 @@ io.on('connection', (socket) => {
     room.B = newBoard();
     room.turn = 1;
     room.over = false;
+    room.moveSeq = 0;
     broadcastRoom(room);
   });
 
   socket.on('leave', () => {
-    const code = socket.data.room;
-    if (!code) return;
-    const room = rooms.get(code);
-    if (room) {
-      if (room.players[1] === socket.id) room.players[1] = null;
-      if (room.players[2] === socket.id) room.players[2] = null;
-      socket.leave(code);
-      if (!room.players[1] && !room.players[2]) rooms.delete(code);
-      else {
-        room.over = true;
-        io.to(code).emit('opponent_left');
-        broadcastRoom(room);
-      }
+    const room = clearPlayer(socket);
+    if (room && (room.players[1] || room.players[2])) {
+      room.over = true;
+      io.to(room.code).emit('opponent_left');
+      broadcastRoom(room);
     }
-    socket.data.room = null;
-    socket.data.player = null;
   });
 
   socket.on('disconnect', () => {

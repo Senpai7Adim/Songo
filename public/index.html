@@ -136,7 +136,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
   <div class="lobby-box">
     <h2 id="lobby-title">En ligne</h2>
     <p id="conn-status" class="wait" style="margin-bottom:10px">Connexion…</p>
-    <p class="wait" style="font-size:11px;margin-bottom:12px">Les deux joueurs doivent ouvrir <b>la même adresse</b> (même site web).</p>
+    <p class="wait" style="font-size:11px;margin-bottom:12px">Lancez d'abord <code>npm start</code>, puis ouvrez <b>http://localhost:3000</b> (pas le fichier HTML directement).</p>
     <div id="lobby-create">
       <p class="wait">Créez une salle et partagez le code</p>
       <button class="btn" onclick="createRoom()">Créer une salle</button>
@@ -205,7 +205,7 @@ body{font-family:var(--font-sans);background:var(--color-background-primary);col
 const P1S=6,P2S=13,P1=[0,1,2,3,4,5],P2=[7,8,9,10,11,12];
 const C1='#F5D08A',C2='#88BBFF',CG='#80EE80';
 let B=[],turn=1,over=false,busy=false,diff=1,actx;
-let mode='ai',myPlayer=1,socket=null,roomCode=null,pendingState=null;
+let mode='ai',myPlayer=1,socket=null,roomCode=null,pendingState=null,pendingMove=null,lastMoveSeq=-1;
 
 function init(){B=Array(14).fill(4);B[P1S]=0;B[P2S]=0}
 function opp(i){return 12-i}
@@ -359,14 +359,20 @@ async function click(idx){
   const p=own(idx,1)?1:2;
   if(!canPlay(p))return;
   if(!own(idx,p)||!B[idx])return;
-  clrH();busy=true;rend(false);
+  clrH();
 
   if(mode==='online'){
-    socket.emit('move',idx,res=>{
-      if(!res||!res.ok){busy=false;rend();setInf(res&&res.error?res.error:'Coup invalide');}
+    const s=getSocket();
+    if(!s.connected){setInf('Non connecté au serveur');return;}
+    if(busy)return;
+    s.emit('move',Number(idx),res=>{
+      if(!res||!res.ok){setInf(res&&res.error?res.error:'Coup invalide');rend();return;}
+      if(res.move)handleOnlineMove(res.move);
     });
     return;
   }
+
+  busy=true;rend(false);
 
   const r=await animM(idx,p,{});
   chkEnd();if(over){busy=false;return;}
@@ -486,8 +492,8 @@ function sd(d,btn){diff=d;document.querySelectorAll('.db').forEach(b=>b.classLis
 function tr(){document.getElementById('rp').classList.toggle('show')}
 
 function ng(){
-  if(mode==='online'&&socket&&roomCode){socket.emit('rematch');return}
-  init();turn=1;over=false;busy=false;
+  if(mode==='online'&&socket&&roomCode){lastMoveSeq=-1;socket.emit('rematch');return}
+  init();turn=1;over=false;busy=false;lastMoveSeq=-1;
   document.getElementById('em').style.display='none';document.getElementById('em').textContent='';
   clrH();rend();
   setTurnInf();
@@ -508,9 +514,10 @@ function showGame(){
   }else ng();
 }
 
-function updateConnStatus(){
+function updateConnStatus(msg){
   const el=document.getElementById('conn-status');
   if(!el)return;
+  if(msg){el.textContent=msg;el.style.color='#e55';return}
   if(!socket){el.textContent='Non connecté';el.style.color='#e55';return}
   if(socket.connected){el.textContent='● Connecté au serveur';el.style.color='#4a4'}
   else{el.textContent='○ Reconnexion…';el.style.color='#c90'}
@@ -518,9 +525,22 @@ function updateConnStatus(){
 
 function getSocket(){
   if(!socket){
-    socket=io({transports:['websocket','polling'],reconnection:true});
-    socket.on('connect',updateConnStatus);
-    socket.on('disconnect',updateConnStatus);
+    if(location.protocol==='file:'){
+      updateConnStatus('Ouvrez http://localhost:3000 (pas le fichier HTML directement)');
+      return null;
+    }
+    socket=io({
+      transports:['polling','websocket'],
+      reconnection:true,
+      reconnectionAttempts:30,
+      reconnectionDelay:1000,
+      timeout:10000
+    });
+    socket.on('connect',()=>{updateConnStatus();rejoinOnline();});
+    socket.on('disconnect',()=>updateConnStatus());
+    socket.on('connect_error',()=>{
+      updateConnStatus('Serveur inaccessible — lancez : npm start');
+    });
     listenOnline();
   }
   updateConnStatus();
@@ -554,6 +574,7 @@ function backToMenu(){
 function createRoom(){
   const s=getSocket();
   document.getElementById('lobby-err').textContent='';
+  if(!s){document.getElementById('lobby-err').textContent='Serveur non disponible';return}
   if(!s.connected){document.getElementById('lobby-err').textContent='Connexion en cours…';s.once('connect',createRoom);return}
   s.emit('create',res=>{
     if(!res||!res.ok){document.getElementById('lobby-err').textContent='Erreur de création';return}
@@ -571,11 +592,12 @@ function joinRoom(){
   if(code.length<4){document.getElementById('lobby-err').textContent='Entrez un code valide';return}
   const s=getSocket();
   document.getElementById('lobby-err').textContent='';
+  if(!s){document.getElementById('lobby-err').textContent='Serveur non disponible';return}
   if(!s.connected){document.getElementById('lobby-err').textContent='Connexion en cours…';s.once('connect',joinRoom);return}
   s.emit('join',code,res=>{
     if(!res||!res.ok){document.getElementById('lobby-err').textContent=res.error||'Impossible de rejoindre';return}
     myPlayer=res.player;roomCode=res.code;
-    if(res.state){applyState(res.state);updateLabels();showGame()}
+    if(res.state){lastMoveSeq=-1;applyState(res.state);updateLabels();showGame();}
   });
 }
 
@@ -588,13 +610,24 @@ function setTurnInf(){
   else setInf('<span class="td"></span><span class="td"></span><span class="td"></span> Tour de l\'adversaire…');
 }
 
+function tryStartOnlineGame(st){
+  if(mode!=='online'||!st||!st.players||!st.players[1]||!st.players[2])return false;
+  if(!document.getElementById('game').classList.contains('hidden'))return false;
+  applyState(st);
+  updateLabels();
+  showGame();
+  return true;
+}
+
 function applyState(st){
   if(!st)return;
-  B=st.B.slice();turn=st.turn;over=st.over;roomCode=st.code;
+  B=(st.B||[]).slice();turn=st.turn||1;over=!!st.over;roomCode=st.code||roomCode;
+  if(st.moveSeq!==undefined)lastMoveSeq=st.moveSeq;
   if(!over){
     document.getElementById('em').style.display='none';
     document.getElementById('em').textContent='';
   }
+  busy=false;
   rend();
   if(over&&st.scores){
     B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;
@@ -602,34 +635,56 @@ function applyState(st){
   }else if(!over)setTurnInf();
 }
 
+async function handleOnlineMove(mv){
+  if(!mv||mv.seq===undefined||mv.seq<=lastMoveSeq)return;
+  if(busy){pendingMove=mv;return;}
+  lastMoveSeq=mv.seq;
+  busy=true;
+  try{
+    rend(false);
+    B[mv.pit]=mv.seeds;
+    await animM(mv.pit,mv.player,{skipBusy:true,seeds:mv.seeds});
+    if(mv.B)B=mv.B.slice();
+    turn=mv.turn;
+    over=!!mv.over;
+    if(mv.over&&mv.scores){
+      B[P1S]=mv.scores.p1;B[P2S]=mv.scores.p2;
+      rendAll();
+      chkEnd(mv.scores);
+    }else{
+      rend();
+      setTurnInf();
+    }
+  }finally{
+    busy=false;
+    if(pendingMove){const pm=pendingMove;pendingMove=null;handleOnlineMove(pm);}
+    else if(pendingState){const ps=pendingState;pendingState=null;applyState(ps);}
+    else if(!over)rend();
+  }
+}
+
+function rejoinOnline(){
+  if(mode!=='online'||!roomCode||!myPlayer)return;
+  const s=getSocket();
+  if(!s.connected)return;
+  s.emit('rejoin',roomCode,myPlayer,res=>{
+    if(res&&res.ok&&res.state){
+      applyState(res.state);
+      updateLabels();
+      if(document.getElementById('game').classList.contains('hidden'))showGame();
+    }
+  });
+}
+
 function listenOnline(){
   if(!socket._songo){socket._songo=true;
     socket.on('state',st=>{
       if(!st)return;
-      if(busy){pendingState=st;return}
-      if(mode==='online'&&document.getElementById('game').classList.contains('hidden')&&st.players[1]&&st.players[2]){
-        applyState(st);updateLabels();showGame();return;
-      }
-      applyState(st);
+      if(busy){pendingState=st;return;}
+      if(tryStartOnlineGame(st))return;
+      if(mode==='online')applyState(st);
     });
-    socket.on('move',async mv=>{
-      if(!mv)return;
-      busy=true;rend(false);
-      B[mv.pit]=mv.seeds;
-      await animM(mv.pit,mv.player,{skipBusy:true,seeds:mv.seeds});
-      if(mv.B)B=mv.B.slice();
-      turn=mv.turn;
-      if(mv.over){
-        if(mv.scores){B[P1S]=mv.scores.p1;B[P2S]=mv.scores.p2}
-        over=true;rendAll();
-        chkEnd(mv.scores);
-      }else{
-        over=false;rend();setTurnInf();
-      }
-      busy=false;
-      if(pendingState){const ps=pendingState;pendingState=null;applyState(ps)}
-      else rend();
-    });
+    socket.on('move',mv=>handleOnlineMove(mv));
     socket.on('opponent_left',()=>{
       over=true;busy=false;pendingState=null;
       document.getElementById('em').textContent='Adversaire déconnecté';document.getElementById('em').style.display='block';
