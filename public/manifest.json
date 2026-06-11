@@ -1,0 +1,10 @@
+{
+  "name": "Songo — Mancala Camerounais",
+  "short_name": "Songo",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#111111",
+  "theme_color": "#F5D08A",
+  "description": "Songo — jeu de mancala camerounais (solo, local, en ligne)",
+  "icons": []
+}
