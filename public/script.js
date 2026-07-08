@@ -13,17 +13,43 @@ function gs(p){return p===1?P1S:P2S}
 function wt(ms){return new Promise(r=>setTimeout(r,ms))}
 
 function flipped(){return mode==='online'&&myPlayer===2}
+
+/*
+ * ── BOARD MAPPING : canonical index → DOM position ──────────────────────────
+ *
+ * Canonical board (server, never changes):
+ *   [0][1][2][3][4][5][6=P1S]  [7][8][9][10][11][12][13=P2S]
+ *   ───── P1 pits ─────────     ──────── P2 pits ──────────
+ *
+ * Sowing direction nx(): 0→1→2→3→4→5→6→7→8→9→10→11→12→13→0→…
+ *
+ * Player 1 view (normal):
+ *   [P2s 13] | [12][11][10][9][8][7]  ← top row (rai, opponent)
+ *            | [0 ][1 ][2 ][3][4][5]  → bot row (ryo, mine)
+ *   Anti-clockwise: bot goes RIGHT, top goes LEFT ✓
+ *
+ * Player 2 view (flipped):
+ *   [P1s  6] | [5][4][3][2][1][0]  ← top row (rai, opponent) — REVERSED
+ *            | [7][8][9][10][11][12] → bot row (ryo, mine)
+ *   Anti-clockwise: bot goes RIGHT, top goes LEFT ✓
+ *
+ *   Key: P1 pit index i maps to rai.children[5-i] for P2.
+ *   This is the only mapping change — no game logic is touched.
+ * ─────────────────────────────────────────────────────────────────────────────
+ */
 function gEl(idx){
   if(flipped()){
     if(idx===P2S)return document.getElementById('styo');
     if(idx===P1S)return document.getElementById('stai');
     if(idx>=7&&idx<=12)return document.getElementById('ryo').children[idx-7];
-    if(idx>=0&&idx<=5)return document.getElementById('rai').children[idx];
+    // P1 pits reversed: canonical idx 0→rai[5], idx 5→rai[0]
+    if(idx>=0&&idx<=5)return document.getElementById('rai').children[5-idx];
     return null;
   }
   if(idx===P1S)return document.getElementById('styo');
   if(idx===P2S)return document.getElementById('stai');
   if(idx>=0&&idx<=5)return document.getElementById('ryo').children[idx];
+  // P2 pits reversed for P1 view: idx 7→rai[5], idx 12→rai[0]
   if(idx>=7&&idx<=12)return document.getElementById('rai').children[12-idx];
   return null;
 }
@@ -161,11 +187,11 @@ async function click(idx){
 
   if(mode==='online'){
     const s=getSocket();
-    if(!s.connected){setInf('Non connecté au serveur');return;}
+    if(!s||!s.connected){setInf('Non connecté au serveur');return;}
     if(busy)return;
     s.emit('move',Number(idx),res=>{
-      if(!res||!res.ok){setInf(res&&res.error?res.error:'Coup invalide');rend();return;}
-      if(res.move)handleOnlineMove(res.move);
+      if(!res||!res.ok){setInf(res&&res.error?res.error:'Coup invalide');rend();}
+      // Le gameState event gère la mise à jour — aucun traitement côté client
     });
     return;
   }
@@ -278,8 +304,12 @@ function rendAll(){
   const ry=document.getElementById('ryo');ry.innerHTML='';
   const ra=document.getElementById('rai');ra.innerHTML='';
   if(flipped()){
+    // Bot row: P2 pits in canonical order (7→12, left to right)
     P2.forEach((idx,i)=>addPit(ry,idx,2,String(i+1)));
-    P1.forEach((idx,i)=>addPit(ra,idx,1,String(i+1)));
+    // Top row: P1 pits in REVERSED order (5→0, left to right)
+    // so rai.children[0]=pit5, rai.children[5]=pit0
+    // → sowing 0→1→2→3→4→5 travels visually RIGHT→LEFT = anti-clockwise ✓
+    [...P1].reverse().forEach(idx=>addPit(ra,idx,1,null));
   }else{
     P1.forEach((idx,i)=>addPit(ry,idx,1,String(i+1)));
     for(let i=12;i>=7;i--)addPit(ra,i,2,null);
@@ -480,7 +510,11 @@ function tryStartOnlineGame(st){
 
 function applyState(st){
   if(!st)return;
-  B=(st.B||[]).slice();turn=st.turn||1;over=!!st.over;roomCode=st.code||roomCode;
+  // Accepte l'ancien format (B, turn) et le nouveau format serveur (board, currentPlayer)
+  B=(st.board||st.B||[]).slice();
+  turn=st.currentPlayer||st.turn||1;
+  over=!!st.over;
+  roomCode=st.code||roomCode;
   if(st.moveSeq!==undefined)lastMoveSeq=st.moveSeq;
   if(st.paused&&st.graceEndsAt)showPauseBanner(st.graceEndsAt,st.disconnectedSlot);
   else if(!st.paused)hidePauseBanner();
@@ -490,36 +524,78 @@ function applyState(st){
   }
   busy=false;
   rend();
-  if(over&&st.scores){
-    B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;
-    chkEnd(st.scores);
-  }else if(!over)setTurnInf();
+  if(over&&st.scores){B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;chkEnd(st.scores);}
+  else if(!over)setTurnInf();
 }
 
-async function handleOnlineMove(mv){
-  if(!mv||mv.seq===undefined||mv.seq<=lastMoveSeq)return;
-  if(busy){pendingMove=mv;return;}
-  lastMoveSeq=mv.seq;
+// Animation purement visuelle du coup reçu du serveur — ne modifie jamais B[]
+async function animOnlineMove(mv){
+  const{pit,player,seeds,extra,captured,lastPit}=mv;
+  if(!seeds)return;
+  const spd=seeds<=6?215:seeds<=12?170:seeds<=20?130:90;
+  const col=player===1?C1:C2;
+  const rc=player===1?'ar':'ara';
+  setInf('<span class="sd" style="background:'+col+'"></span> <b>'+seeds+'</b> graine'+(seeds>1?'s':'')+'\u2026');
+  const se=gEl(pit);
+  if(se)se.classList.add(player===1?'sp':'sa');
+  ta(se,'adp');snd('dp');await wt(spd*0.6);
+  if(se)se.classList.remove('sp','sa');
+  let cur=pit;
+  for(let i=0;i<seeds;i++){
+    const prev=cur;cur=nx(cur,player);
+    fly(prev,cur,col);await wt(spd*0.42);
+    const el=gEl(cur);ta(el,rc);fl(el,'+1',col);
+    if(i%Math.max(1,Math.floor(seeds/8))===0)snd('dp');
+    await wt(spd*0.58);
+  }
+  if(extra){
+    const se2=gEl(gs(player));ta(se2,player===1?'asg':'asb');fl(se2,'\u2728',col);snd('ex');
+    setInf('<span class="sd" style="background:'+col+'"></span> \u2728 Tour supplémentaire !');
+    await wt(420);
+  }
+  if(!extra&&captured>0&&lastPit!==undefined){
+    const capFrom=opp(lastPit);
+    setInf('<span class="sd" style="background:'+CG+'"></span> Capture de <b>'+captured+'</b> graines !');
+    await wt(160);ta(gEl(lastPit),'acp');ta(gEl(capFrom),'acp');snd('cp');await wt(380);
+    const st2=gEl(gs(player));ta(st2,'asn');fl(st2,'+'+captured,CG);await wt(300);
+  }
+}
+
+// Reçoit l'état complet du serveur, anime visuellement, puis écrase B[] avec la vérité serveur
+async function handleGameState(srvState){
+  if(!srvState)return;
+  if(tryStartOnlineGame(srvState))return;
+  if(mode!=='online')return;
+
+  const seq=srvState.lastMove?srvState.lastMove.seq:-1;
+
+  // Mise à jour d'état sans nouveau coup (pause, reprise, rematch, reconnexion)
+  if(!srvState.lastMove||seq<=lastMoveSeq){
+    applyState(srvState);
+    return;
+  }
+
+  if(busy){pendingState=srvState;return;}
+  lastMoveSeq=seq;
   busy=true;
+
   try{
     rend(false);
-    B[mv.pit]=mv.seeds;
-    await animM(mv.pit,mv.player,{skipBusy:true,seeds:mv.seeds});
-    if(mv.B)B=mv.B.slice();
-    turn=mv.turn;
-    over=!!mv.over;
-    if(mv.over&&mv.scores){
-      B[P1S]=mv.scores.p1;B[P2S]=mv.scores.p2;
-      rendAll();
-      chkEnd(mv.scores);
+    // Animation purement visuelle — B[] n'est pas touché
+    await animOnlineMove(srvState.lastMove);
+    // Écrasement atomique : B[] reçoit la vérité du serveur
+    B=(srvState.board||[]).slice();
+    turn=srvState.currentPlayer||1;
+    over=!!srvState.over;
+    if(over){
+      if(srvState.scores){B[P1S]=srvState.scores.p1;B[P2S]=srvState.scores.p2;}
+      rendAll();chkEnd(srvState.scores);
     }else{
-      rend();
-      setTurnInf();
+      rend();setTurnInf();
     }
   }finally{
     busy=false;
-    if(pendingMove){const pm=pendingMove;pendingMove=null;handleOnlineMove(pm);}
-    else if(pendingState){const ps=pendingState;pendingState=null;applyState(ps);}
+    if(pendingState){const ps=pendingState;pendingState=null;handleGameState(ps);}
     else if(!over)rend();
   }
 }
@@ -562,20 +638,18 @@ function rejoinOnline(){
 
 function listenOnline(){
   if(!socket._songo){socket._songo=true;
-    socket.on('state',st=>{
-      if(!st)return;
-      if(busy){pendingState=st;return;}
-      if(tryStartOnlineGame(st))return;
-      if(mode==='online')applyState(st);
+    // Un seul événement gameState transporte tout : coup, score, tour, fin de partie
+    socket.on('gameState',srvState=>{
+      if(!srvState)return;
+      handleGameState(srvState);
     });
-    socket.on('move',mv=>handleOnlineMove(mv));
     socket.on('player_disconnected',d=>{
       if(d&&d.graceEndsAt)showPauseBanner(d.graceEndsAt,d.slot);
-      else gamePaused=true;rend();
+      else{gamePaused=true;rend();}
     });
     socket.on('player_rejoined',()=>{
       hidePauseBanner();
-      setInf('<span style="color:#4a4">●</span> Adversaire de retour — la partie reprend !');
+      setInf('<span style="color:#4a4">\u25cf</span> Adversaire de retour \u2014 la partie reprend !');
       setTurnInf();
     });
     socket.on('opponent_left',data=>handleOpponentLeft(data));

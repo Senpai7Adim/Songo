@@ -123,23 +123,34 @@ function checkEnd(B) {
   return { over: false };
 }
 
-function roomState(room) {
+function roomState(room, lastMove) {
+  const b = [...room.B];
+  const p1score = b[P1S];
+  const p2score = b[P2S];
+  let winner = null;
+  if (room.over) {
+    if (p1score > p2score) winner = 1;
+    else if (p2score > p1score) winner = 2;
+    else winner = 0; // égalité
+  }
   return {
     code: room.code,
-    B: [...room.B],
-    turn: room.turn,
+    board: b,
+    scores: { p1: p1score, p2: p2score },
+    currentPlayer: room.turn,
+    lastMove: lastMove || null,
+    winner,
     over: room.over,
     moveSeq: room.moveSeq,
     paused: !!room.paused,
     disconnectedSlot: room.disconnectedSlot || null,
     graceEndsAt: room.graceEndsAt || null,
-    scores: room.over ? { p1: room.B[P1S], p2: room.B[P2S] } : null,
     players: { 1: !!room.players[1], 2: !!room.players[2] }
   };
 }
 
-function broadcastRoom(room) {
-  io.to(room.code).emit('state', roomState(room));
+function broadcastRoom(room, lastMove) {
+  io.to(room.code).emit('gameState', roomState(room, lastMove || null));
 }
 
 function attachPlayer(socket, room, slot) {
@@ -257,21 +268,18 @@ io.on('connection', (socket) => {
     if (end.over) room.over = true;
 
     room.moveSeq += 1;
-    const move = {
+    const lastMove = {
       seq: room.moveSeq,
       pit: pitIdx,
       player,
       seeds,
       extra: result.extra,
       captured: result.captured,
-      turn: room.turn,
-      over: end.over,
-      B: [...room.B],
-      scores: end.over ? end.scores : null
+      lastPit: result.lastPit
     };
 
-    io.to(code).emit('move', move);
-    if (typeof cb === 'function') cb({ ok: true, move });
+    broadcastRoom(room, lastMove);
+    if (typeof cb === 'function') cb({ ok: true });
   });
 
   socket.on('rematch', () => {
