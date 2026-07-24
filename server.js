@@ -19,6 +19,10 @@ const io = new Server(server, {
 
 app.use(express.static(path.join(__dirname, 'public')));
 
+app.get(['/doc', '/doc/'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'Documentation', 'songo-documentation.html'));
+});
+
 const rooms = new Map();
 const DISCONNECT_GRACE_MS = 90000;
 

@@ -1,0 +1,822 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>Songo — Documentation Utilisateur</title>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+  :root {
+    --ink:       #1A1208;
+    --ink-light: #221808;
+    --purple:    #C8922A;
+    --purple-l:  rgba(200,146,42,0.15);
+    --purple-m:  #F5D08A;
+    --amber:     #C0522A;
+    --amber-l:   rgba(192,82,42,0.15);
+    --teal:      #2D6A4F;
+    --teal-l:    rgba(45,106,79,0.15);
+    --sand:      #1A1208;
+    --line:      rgba(200,146,42,0.28);
+    --text:      #F5ECD7;
+    --muted:     rgba(245,236,215,0.55);
+    --white:     #221808;
+    --r:         16px;
+    --r-sm:      8px;
+  }
+
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    font-family: 'Outfit', sans-serif;
+    background: var(--sand);
+    color: var(--text);
+    line-height: 1.6;
+    background-image: radial-gradient(ellipse 80% 60% at 50% -10%, rgba(107,45,15,0.18) 0%, transparent 70%);
+  }
+
+  /* ── SIDEBAR ───────────────────────────────── */
+  .layout { display: flex; min-height: 100vh; }
+  nav.sidebar {
+    width: 240px; flex-shrink: 0;
+    background: rgba(34,24,8,0.6); backdrop-filter: blur(10px);
+    border-right: 1px solid var(--line);
+    position: sticky; top: 0; height: 100vh; overflow-y: auto;
+    padding: 1.5rem 0; display: flex; flex-direction: column;
+  }
+  .nav-brand { padding: 0 1.5rem 1.5rem; border-bottom: 1px solid var(--line); margin-bottom: 1rem; }
+  .nav-brand .logo { display: flex; align-items: center; gap: 10px; margin-bottom: 6px; }
+  .logo-icon {
+    width: 36px; height: 36px; background: linear-gradient(135deg, var(--purple), #6B2D0F);
+    border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center;
+    border: 1px solid var(--line);
+  }
+  .logo-icon svg { width: 20px; height: 20px; }
+  .nav-brand h1 { font-family: 'Cinzel', serif; font-size: 20px; font-weight: 700; color: var(--purple-m); letter-spacing: 1px; }
+  .nav-brand p { font-size: 11px; color: var(--muted); text-transform: uppercase; letter-spacing: 0.1em; }
+  .nav-section { padding: 0 1rem; margin-bottom: 1.5rem; }
+  .nav-section-title { font-size: 10px; font-weight: 600; text-transform: uppercase; letter-spacing: .12em; color: var(--muted); padding: 0 0.5rem; margin-bottom: 0.5rem; }
+  .nav-link { display: flex; align-items: center; gap: 8px; padding: 8px 10px; border-radius: var(--r-sm); font-size: 13px; color: var(--text); text-decoration: none; transition: background .2s, color .2s; }
+  .nav-link:hover { background: var(--purple-l); color: var(--purple-m); }
+  .nav-link.active { background: var(--purple-l); color: var(--purple-m); font-weight: 600; border-left: 3px solid var(--purple); }
+  .nav-link .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--purple); flex-shrink: 0; opacity: 0.5; }
+  .nav-link.active .dot { opacity: 1; box-shadow: 0 0 6px var(--purple); }
+
+  /* ── MAIN ──────────────────────────────────── */
+  main { flex: 1; min-width: 0; }
+
+  /* ── HERO ──────────────────────────────────── */
+  .hero {
+    background: linear-gradient(135deg, rgba(34,24,8,0.9) 0%, rgba(107,45,15,0.4) 100%);
+    padding: 4rem 3rem 3rem; position: relative; overflow: hidden; border-bottom: 1px solid var(--line);
+  }
+  .hero::before {
+    content: ''; position: absolute; inset: 0;
+    background-image: repeating-linear-gradient( 45deg, transparent, transparent 6px, rgba(200,146,42,0.03) 6px, rgba(200,146,42,0.03) 8px);
+    pointer-events: none;
+  }
+  .hero-badge { display: inline-block; padding: 4px 12px; background: rgba(200,146,42,.15); border: 1px solid rgba(200,146,42,.3); border-radius: 20px; font-size: 11px; color: var(--purple-m); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 1.2rem; }
+  .hero h2 { font-family: 'Cinzel', serif; font-size: 42px; font-weight: 700; color: #fff; line-height: 1.1; margin-bottom: .8rem; }
+  .hero h2 span { color: var(--purple); }
+  .hero p { font-size: 17px; color: rgba(245,236,215,.8); max-width: 520px; line-height: 1.7; }
+  .hero-chips { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 1.8rem; }
+  .chip { padding: 6px 16px; border-radius: 20px; font-size: 12px; font-weight: 500; background: rgba(255,255,255,.05); color: var(--text); border: 1px solid rgba(255,255,255,.1); backdrop-filter: blur(4px); }
+
+  /* ── PAGE CONTENT ───────────────────────────── */
+  .content { padding: 3rem; max-width: 820px; }
+  .content > * + * { margin-top: 3rem; }
+
+  /* ── SECTION HEADERS ─────────────────────────── */
+  .section-label { display: flex; align-items: center; gap: 12px; margin-bottom: 1.2rem; }
+  .section-num { width: 32px; height: 32px; border-radius: 50%; background: linear-gradient(135deg, var(--purple), #8A6016); color: #fff; display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; box-shadow: 0 2px 8px rgba(200,146,42,0.3); }
+  .section-label h3 { font-family: 'Cinzel', serif; font-size: 24px; font-weight: 700; color: var(--purple-m); }
+
+  /* ── PROSE ──────────────────────────────────── */
+  .prose p { font-size: 15px; color: var(--text); line-height: 1.75; margin-bottom: 1rem; }
+  .prose p:last-child { margin-bottom: 0; }
+  .prose strong { color: var(--purple-m); font-weight: 600; }
+  code { background: rgba(255,255,255,0.1); padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 0.9em; color: var(--purple-m); }
+  hr.divider { border: none; height: 1px; background: linear-gradient(90deg, transparent, var(--line), transparent); margin: 3rem 0; }
+
+  /* ── CARD GRID ──────────────────────────────── */
+  .card-grid { display: grid; gap: 1rem; }
+  .card-grid.cols-3 { grid-template-columns: repeat(3, 1fr); }
+  .card-grid.cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .card { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 1.5rem; transition: transform .2s, box-shadow .2s; }
+  .card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  .card-icon { width: 44px; height: 44px; border-radius: var(--r-sm); display: flex; align-items: center; justify-content: center; font-size: 20px; margin-bottom: 1rem; border: 1px solid var(--line); }
+  .card h4 { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--purple-m); margin-bottom: .4rem; }
+  .card p { font-size: 13px; color: var(--muted); line-height: 1.6; }
+
+  /* ── GAME BOARD MOCKUP ──────────────────────── */
+  .board-mockup { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 2rem; margin-bottom: 1rem; box-shadow: inset 0 0 20px rgba(0,0,0,0.2); }
+  .board-mockup-title { font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; margin-bottom: 1.5rem; display: flex; align-items: center; gap: 12px; }
+  .board-mockup-title::after { content: ''; flex: 1; height: 1px; background: var(--line); }
+  .board-wrap { background: #3D1A08; border-radius: 80px; padding: 1.5rem; display: flex; align-items: center; gap: 1.2rem; max-width: 620px; margin: 0 auto; box-shadow: 0 10px 30px rgba(0,0,0,0.5), inset 0 4px 10px rgba(255,255,255,0.05); border: 1px solid #6B2D0F; }
+  .store { width: 60px; height: 110px; background: #1A1208; border-radius: 30px; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 4px; color: #fff; flex-shrink: 0; box-shadow: inset 0 4px 10px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); }
+  .store .store-num { font-size: 24px; font-weight: 700; color: var(--purple-m); }
+  .store .store-lbl { font-size: 10px; opacity: .5; text-transform: uppercase; letter-spacing: .05em; }
+  .pits-grid { flex: 1; display: grid; grid-template-rows: 1fr 1fr; gap: 12px; }
+  .pits-row { display: grid; grid-template-columns: repeat(6, 1fr); gap: 10px; }
+  .pit-btn { background: #1A1208; border-radius: 50%; aspect-ratio: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; cursor: pointer; transition: background .2s, transform .2s; position: relative; box-shadow: inset 0 3px 8px rgba(0,0,0,0.6); border: 1px solid rgba(255,255,255,0.05); }
+  .pit-btn:hover { background: #221808; transform: scale(1.05); }
+  .pit-btn.active { box-shadow: 0 0 12px var(--purple), inset 0 3px 8px rgba(0,0,0,0.6); border-color: var(--purple); }
+  .pit-btn .seeds { font-size: 13px; font-weight: 700; color: #fff; }
+  .pit-btn .seeds-dots { display: flex; flex-wrap: wrap; gap: 2px; justify-content: center; width: 32px; }
+  .seed { width: 6px; height: 6px; border-radius: 50%; background: var(--purple-m); box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+  .seed.green { background: var(--teal); }
+  .row-label { font-size: 10px; color: rgba(245,236,215,.4); text-align: center; margin-top: 6px; text-transform: uppercase; letter-spacing: .08em; }
+  .board-legend { display: flex; justify-content: center; gap: 2rem; margin-top: 1.5rem; flex-wrap: wrap; }
+  .legend-item { display: flex; align-items: center; gap: 8px; font-size: 12px; color: var(--muted); }
+  .legend-dot { width: 12px; height: 12px; border-radius: 50%; box-shadow: 0 1px 3px rgba(0,0,0,0.5); }
+
+  /* ── STEPS ──────────────────────────────────── */
+  .steps { display: flex; flex-direction: column; gap: 0; }
+  .step { display: flex; gap: 1.2rem; padding: 1.5rem 0; border-bottom: 1px solid var(--line); }
+  .step:last-child { border-bottom: none; }
+  .step-num { width: 32px; height: 32px; border-radius: 50%; background: var(--purple-l); color: var(--purple-m); display: flex; align-items: center; justify-content: center; font-family: 'Cinzel', serif; font-size: 14px; font-weight: 700; flex-shrink: 0; margin-top: 2px; border: 1px solid var(--purple); }
+  .step-body h5 { font-family: 'Cinzel', serif; font-size: 16px; font-weight: 700; color: var(--text); margin-bottom: .4rem; }
+  .step-body p { font-size: 14px; color: var(--muted); line-height: 1.6; }
+
+  /* ── RULES TABLE ────────────────────────────── */
+  .rules-table { width: 100%; border-collapse: collapse; font-size: 14px; background: var(--white); border-radius: var(--r); overflow: hidden; border: 1px solid var(--line); }
+  .rules-table th { background: var(--ink-light); color: var(--purple-m); font-weight: 600; font-size: 12px; text-transform: uppercase; letter-spacing: .08em; padding: 12px 16px; text-align: left; border-bottom: 1px solid var(--line); }
+  .rules-table td { padding: 12px 16px; border-top: 1px solid var(--line); color: var(--muted); vertical-align: top; }
+  .rules-table tr:nth-child(even) td { background: rgba(255,255,255,0.02); }
+  .rules-table td:first-child { font-weight: 600; color: var(--text); white-space: nowrap; }
+
+  /* ── CALLOUT ─────────────────────────────────── */
+  .callout { border-radius: var(--r-sm); padding: 1.25rem 1.5rem; display: flex; gap: 16px; align-items: flex-start; margin: 1.5rem 0; border: 1px solid transparent; }
+  .callout.info { background: var(--purple-l); border-left: 3px solid var(--purple); border-color: rgba(200,146,42,0.3); }
+  .callout.tip  { background: var(--teal-l); border-left: 3px solid var(--teal); border-color: rgba(45,106,79,0.3); }
+  .callout.warn { background: var(--amber-l); border-left: 3px solid var(--amber); border-color: rgba(192,82,42,0.3); }
+  .callout-icon { font-size: 20px; flex-shrink: 0; margin-top: 2px; }
+  .callout p { font-size: 14px; line-height: 1.6; color: var(--text); }
+  .callout p strong { color: var(--purple-m); }
+
+  /* ── FAQ ─────────────────────────────────────── */
+  .faq { display: flex; flex-direction: column; gap: 0; }
+  .faq-item { border-bottom: 1px solid var(--line); overflow: hidden; }
+  .faq-q { width: 100%; background: none; border: none; cursor: pointer; display: flex; align-items: center; justify-content: space-between; padding: 1.25rem 0; font-family: 'Outfit', sans-serif; font-size: 15px; font-weight: 600; color: var(--text); text-align: left; gap: 1rem; transition: color .2s; }
+  .faq-q:hover { color: var(--purple-m); }
+  .faq-arrow { width: 28px; height: 28px; border-radius: 50%; background: var(--ink-light); display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: background .2s, transform .3s; font-size: 12px; color: var(--muted); border: 1px solid var(--line); }
+  .faq-item.open .faq-arrow { background: var(--purple-l); color: var(--purple-m); transform: rotate(180deg); border-color: var(--purple); }
+  .faq-a { max-height: 0; overflow: hidden; transition: max-height .35s ease; }
+  .faq-item.open .faq-a { max-height: 400px; }
+  .faq-a p { font-size: 14px; color: var(--muted); line-height: 1.7; padding-bottom: 1.25rem; }
+
+  /* ── AI DIFFICULTY ───────────────────────────── */
+  .diff-grid { display: grid; grid-template-columns: repeat(3,1fr); gap: 1rem; }
+  .diff-card { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); padding: 1.5rem; text-align: center; transition: transform .2s; }
+  .diff-card:hover { transform: translateY(-2px); box-shadow: 0 6px 16px rgba(0,0,0,0.3); }
+  .diff-bar-wrap { margin: 1rem 0; }
+  .diff-bar { height: 6px; background: var(--ink); border-radius: 3px; overflow: hidden; border: 1px solid var(--line); }
+  .diff-fill { height: 100%; border-radius: 3px; }
+  .diff-card h4 { font-family: 'Cinzel', serif; font-size: 15px; font-weight: 700; color: var(--text); margin-bottom: .2rem; }
+  .diff-card p { font-size: 13px; color: var(--muted); line-height: 1.5; }
+
+  /* ── MODE SCREENS ─────────────────────────────── */
+  .screen-mockup { background: var(--white); border: 1px solid var(--line); border-radius: var(--r); overflow: hidden; box-shadow: 0 8px 24px rgba(0,0,0,0.4); }
+  .screen-bar { background: var(--ink-light); border-bottom: 1px solid var(--line); padding: .6rem 1.2rem; display: flex; gap: 8px; align-items: center; }
+  .screen-bar .dot { width: 10px; height: 10px; border-radius: 50%; }
+  .screen-bar .dot:nth-child(1) { background: #FF5F57; }
+  .screen-bar .dot:nth-child(2) { background: #FEBC2E; }
+  .screen-bar .dot:nth-child(3) { background: #28C840; }
+  .screen-bar span { font-size: 12px; color: var(--muted); margin-left: 8px; font-family: monospace; }
+  .screen-body { padding: 2.5rem; text-align: center; min-height: 180px; display: flex; flex-direction: column; align-items: center; justify-content: center; background: radial-gradient(ellipse at top, rgba(200,146,42,0.1), transparent 70%); }
+  .screen-title { font-family: 'Cinzel', serif; font-size: 22px; font-weight: 700; color: var(--purple-m); margin-bottom: 1.2rem; }
+  .btn-group { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 240px; }
+  .btn-mock { padding: 12px 20px; border-radius: 8px; font-size: 14px; font-family: 'Outfit', sans-serif; font-weight: 600; border: none; cursor: pointer; transition: opacity .2s; }
+  .btn-mock.primary { background: linear-gradient(135deg, var(--purple), #8A6016); color: #fff; box-shadow: 0 4px 12px rgba(200,146,42,0.3); text-shadow: 0 1px 2px rgba(0,0,0,0.4); }
+  .btn-mock.secondary { background: var(--ink-light); color: var(--text); border: 1px solid var(--line); }
+  .lobby-fields { display: flex; flex-direction: column; gap: 10px; width: 100%; max-width: 280px; }
+  .field-mock { background: var(--ink); border: 1px solid var(--line); border-radius: 6px; padding: 10px 14px; font-size: 13px; color: var(--muted); text-align: left; }
+
+  /* ── FOOTER ──────────────────────────────────── */
+  footer { background: var(--ink-light); color: var(--muted); padding: 2.5rem 3rem; font-size: 13px; display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 1rem; border-top: 1px solid var(--line); }
+  footer strong { color: var(--text); font-weight: 500; }
+
+  @media (max-width: 768px) {
+    nav.sidebar { display: none; }
+    .hero { padding: 3rem 1.5rem 2.5rem; }
+    .content { padding: 2rem 1.5rem; }
+    .card-grid.cols-3, .card-grid.cols-2, .diff-grid { grid-template-columns: 1fr; }
+    .board-wrap { flex-direction: column; border-radius: var(--r-xl); padding: 1rem; }
+    .store { width: 100%; height: 60px; flex-direction: row; border-radius: 20px; }
+    footer { flex-direction: column; text-align: center; }
+  }
+</style>
+</head>
+<body>
+
+<div class="layout">
+
+  <!-- ── SIDEBAR ── -->
+  <nav class="sidebar">
+    <div class="nav-brand">
+      <div class="logo">
+        <div class="logo-icon">
+          <svg viewBox="0 0 20 20" fill="none">
+            <rect x="1" y="6" width="18" height="8" rx="4" fill="rgba(255,255,255,.3)"/>
+            <circle cx="6"  cy="10" r="2" fill="white"/>
+            <circle cx="10" cy="10" r="2" fill="white"/>
+            <circle cx="14" cy="10" r="2" fill="white"/>
+          </svg>
+        </div>
+        <div>
+          <h1>Songo</h1>
+          <p>Documentation</p>
+        </div>
+      </div>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Démarrage</div>
+      <a href="#intro"   class="nav-link active"><span class="dot"></span>Introduction</a>
+      <a href="#modes"   class="nav-link"><span class="dot"></span>Modes de jeu</a>
+      <a href="#start"   class="nav-link"><span class="dot"></span>Première partie</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Jouer</div>
+      <a href="#board"   class="nav-link"><span class="dot"></span>Le plateau</a>
+      <a href="#rules"   class="nav-link"><span class="dot"></span>Règles du jeu</a>
+      <a href="#ia"      class="nav-link"><span class="dot"></span>Intelligence artificielle</a>
+      <a href="#online"  class="nav-link"><span class="dot"></span>Mode en ligne</a>
+    </div>
+
+    <div class="nav-section">
+      <div class="nav-section-title">Référence</div>
+      <a href="#faq"     class="nav-link"><span class="dot"></span>FAQ</a>
+      <a href="#glossaire" class="nav-link"><span class="dot"></span>Glossaire</a>
+    </div>
+  </nav>
+
+  <!-- ── MAIN ── -->
+  <main>
+
+    <!-- HERO -->
+    <section class="hero">
+      <div class="hero-badge">Documentation Utilisateur · v1.0</div>
+      <h2>Bienvenue sur <span>Songo</span></h2>
+      <p>Le jeu de mancala camerounais, jouable en solo, en local ou en ligne — directement dans votre navigateur.</p>
+      <div class="hero-chips">
+        <span class="chip">🌍 Patrimoine camerounais</span>
+        <span class="chip">🤖 IA intégrée</span>
+        <span class="chip">🌐 Multijoueur en ligne</span>
+        <span class="chip">📱 Responsive</span>
+      </div>
+    </section>
+
+    <!-- CONTENT -->
+    <div class="content">
+
+      <!-- ── INTRO ── -->
+      <section id="intro">
+        <div class="section-label">
+          <div class="section-num">1</div>
+          <h3>Qu'est-ce que le Songo ?</h3>
+        </div>
+        <div class="prose">
+          <p>Le <strong>Songo</strong> est un jeu de société traditionnel camerounais appartenant à la grande famille des <strong>Mancalas</strong> — l'un des plus vieux types de jeux au monde. Il se joue sur un plateau rectangulaire comportant 12 fosses et 2 greniers. L'objectif est de capturer plus de graines que l'adversaire.</p>
+          <p>Cette application web vous permet d'y jouer sans aucune installation, depuis n'importe quel navigateur moderne. Elle a été développée dans le cadre du cours <strong>INF 222 — Technologies Web</strong> à l'Université de Yaoundé I.</p>
+        </div>
+
+        <div class="card-grid cols-3" style="margin-top:1.2rem">
+          <div class="card">
+            <div class="card-icon" style="background:var(--purple-l)">🎮</div>
+            <h4>Aucune installation</h4>
+            <p>Le jeu s'ouvre directement dans votre navigateur, sans plugin ni téléchargement.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon" style="background:var(--teal-l)">🏆</div>
+            <h4>3 modes de jeu</h4>
+            <p>Affrontez l'IA, un ami sur le même écran, ou des joueurs distants en ligne.</p>
+          </div>
+          <div class="card">
+            <div class="card-icon" style="background:var(--amber-l)">🔊</div>
+            <h4>Expérience immersive</h4>
+            <p>Animations de graines et effets sonores pour chaque action de jeu.</p>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── MODES ── -->
+      <section id="modes">
+        <div class="section-label">
+          <div class="section-num">2</div>
+          <h3>Modes de jeu</h3>
+        </div>
+        <div class="prose">
+          <p>Depuis le menu principal, choisissez l'un des trois modes disponibles selon vos préférences.</p>
+        </div>
+
+        <div class="card-grid cols-3" style="margin-top:1.2rem">
+          <div class="card" style="border-top: 3px solid var(--purple)">
+            <div class="card-icon" style="background:var(--purple-l); font-size:22px">🤖</div>
+            <h4>Solo contre l'IA</h4>
+            <p>Affrontez l'ordinateur en choisissant votre niveau de difficulté : Facile, Moyen ou Difficile.</p>
+          </div>
+          <div class="card" style="border-top: 3px solid var(--teal)">
+            <div class="card-icon" style="background:var(--teal-l); font-size:22px">👥</div>
+            <h4>Local 2 joueurs</h4>
+            <p>Jouez à deux sur le même ordinateur en vous passant le clavier/souris à chaque tour.</p>
+          </div>
+          <div class="card" style="border-top: 3px solid var(--amber)">
+            <div class="card-icon" style="background:var(--amber-l); font-size:22px">🌐</div>
+            <h4>En ligne</h4>
+            <p>Créez ou rejoignez une salle de jeu pour affronter un ami à distance via WebSocket.</p>
+          </div>
+        </div>
+
+        <!-- Screen mockups -->
+        <div style="margin-top:1.5rem">
+          <div class="screen-mockup">
+            <div class="screen-bar">
+              <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+              <span>songo/index.html — Menu principal</span>
+            </div>
+            <div class="screen-body">
+              <div class="screen-title">🪘 Songo</div>
+              <div class="btn-group">
+                <button class="btn-mock primary">🤖 Solo contre l'IA</button>
+                <button class="btn-mock secondary">👥 2 Joueurs (Local)</button>
+                <button class="btn-mock secondary">🌐 En ligne</button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── PREMIERE PARTIE ── -->
+      <section id="start">
+        <div class="section-label">
+          <div class="section-num">3</div>
+          <h3>Lancer votre première partie</h3>
+        </div>
+
+        <div class="steps">
+          <div class="step">
+            <div class="step-num">1</div>
+            <div class="step-body">
+              <h5>Ouvrir l'application</h5>
+              <p>Ouvrez le fichier <code>index.html</code> dans votre navigateur (Chrome, Firefox, Edge). Vous arrivez sur le menu principal.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">2</div>
+            <div class="step-body">
+              <h5>Choisir un mode de jeu</h5>
+              <p>Cliquez sur l'un des trois boutons du menu : <strong>Solo contre l'IA</strong>, <strong>2 Joueurs</strong> ou <strong>En ligne</strong>.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">3</div>
+            <div class="step-body">
+              <h5>Sélectionner la difficulté (mode Solo)</h5>
+              <p>En mode Solo, choisissez entre Facile, Moyen ou Difficile selon votre niveau d'expérience avec le Songo.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">4</div>
+            <div class="step-body">
+              <h5>Jouer votre tour</h5>
+              <p>Cliquez sur l'une de vos fosses (celles du bas) pour semer les graines. Le jeu gère automatiquement les captures et les tours bonus.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">5</div>
+            <div class="step-body">
+              <h5>Fin de partie</h5>
+              <p>La partie se termine quand un joueur ne peut plus jouer. Le joueur ayant le plus de graines dans son grenier remporte la partie.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout info" style="margin-top:1rem">
+          <span class="callout-icon">💡</span>
+          <p><strong>Astuce :</strong> Le bouton <strong>Règles</strong> dans l'interface de jeu charge le détail des règles à tout moment, sans quitter la partie en cours.</p>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── PLATEAU ── -->
+      <section id="board">
+        <div class="section-label">
+          <div class="section-num">4</div>
+          <h3>Le plateau de jeu</h3>
+        </div>
+        <div class="prose">
+          <p>Le plateau comporte <strong>12 fosses</strong> (6 par joueur) et <strong>2 greniers</strong>. Chaque fosse commence avec 4 graines. Le grenier de chaque joueur se trouve à sa droite.</p>
+        </div>
+
+        <div class="board-mockup" style="margin-top:1.2rem">
+          <div class="board-mockup-title">Aperçu du plateau interactif</div>
+          <div class="board-wrap">
+            <!-- Grenier Joueur 2 (gauche) -->
+            <div class="store">
+              <div class="store-num" id="s2">0</div>
+              <div class="store-lbl">J2</div>
+            </div>
+            <!-- Fosses -->
+            <div class="pits-grid">
+              <!-- Rangée du haut : Joueur 2 (indices 7–12 → affichés de droite à gauche) -->
+              <div>
+                <div class="pits-row" id="row-p2">
+                  <div class="pit-btn" data-idx="12"><div class="seeds-dots" id="p12"></div></div>
+                  <div class="pit-btn" data-idx="11"><div class="seeds-dots" id="p11"></div></div>
+                  <div class="pit-btn" data-idx="10"><div class="seeds-dots" id="p10"></div></div>
+                  <div class="pit-btn" data-idx="9"><div class="seeds-dots" id="p9"></div></div>
+                  <div class="pit-btn" data-idx="8"><div class="seeds-dots" id="p8"></div></div>
+                  <div class="pit-btn" data-idx="7"><div class="seeds-dots" id="p7"></div></div>
+                </div>
+                <div class="row-label">← Joueur 2</div>
+              </div>
+              <!-- Rangée du bas : Joueur 1 (indices 0–5) -->
+              <div>
+                <div class="pits-row" id="row-p1">
+                  <div class="pit-btn" data-idx="0" onclick="clickPit(0)"><div class="seeds-dots" id="p0"></div></div>
+                  <div class="pit-btn" data-idx="1" onclick="clickPit(1)"><div class="seeds-dots" id="p1"></div></div>
+                  <div class="pit-btn" data-idx="2" onclick="clickPit(2)"><div class="seeds-dots" id="p2"></div></div>
+                  <div class="pit-btn" data-idx="3" onclick="clickPit(3)"><div class="seeds-dots" id="p3"></div></div>
+                  <div class="pit-btn" data-idx="4" onclick="clickPit(4)"><div class="seeds-dots" id="p4"></div></div>
+                  <div class="pit-btn" data-idx="5" onclick="clickPit(5)"><div class="seeds-dots" id="p5"></div></div>
+                </div>
+                <div class="row-label">Joueur 1 →</div>
+              </div>
+            </div>
+            <!-- Grenier Joueur 1 (droite) -->
+            <div class="store">
+              <div class="store-num" id="s1">0</div>
+              <div class="store-lbl">J1</div>
+            </div>
+          </div>
+
+          <div class="board-legend">
+            <div class="legend-item"><div class="legend-dot" style="background:var(--purple-m)"></div>Graine normale</div>
+            <div class="legend-item"><div class="legend-dot" style="background:var(--teal)"></div>Dernière graine semée</div>
+            <div class="legend-item"><div class="legend-dot" style="background:rgba(200,146,42,0.15); border:2px solid var(--purple); width:14px; height:14px; border-radius:4px"></div>Fosse sélectionnable</div>
+          </div>
+          <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:.8rem">
+            👆 Cliquez sur une fosse du bas (Joueur 1) pour simuler un semis
+          </p>
+        </div>
+
+        <table class="rules-table">
+          <thead><tr><th>Élément</th><th>Description</th></tr></thead>
+          <tbody>
+            <tr><td>Fosse (normale)</td><td>Case de jeu contenant des graines. Chaque joueur possède 6 fosses.</td></tr>
+            <tr><td>Grenier</td><td>Fosse de score à droite de chaque joueur. Les graines capturées y sont stockées.</td></tr>
+            <tr><td>Graine</td><td>Pion du jeu. 48 graines au total, 4 par fosse en début de partie.</td></tr>
+            <tr><td>Rangée du bas</td><td>Les 6 fosses appartenant au Joueur 1 (ou au joueur dont c'est le tour).</td></tr>
+            <tr><td>Rangée du haut</td><td>Les 6 fosses appartenant au Joueur 2 (ou à l'adversaire).</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── RÈGLES ── -->
+      <section id="rules">
+        <div class="section-label">
+          <div class="section-num">5</div>
+          <h3>Règles du jeu</h3>
+        </div>
+
+        <div class="callout tip">
+          <span class="callout-icon">🎯</span>
+          <p><strong>Objectif :</strong> Capturer le plus grand nombre de graines dans votre grenier. La partie se termine quand un joueur n'a plus de graines à semer.</p>
+        </div>
+
+        <div class="steps" style="margin-top:1rem">
+          <div class="step">
+            <div class="step-num">①</div>
+            <div class="step-body">
+              <h5>Semer les graines</h5>
+              <p>À votre tour, cliquez sur l'une de vos fosses (non vide). Toutes les graines de cette fosse sont prélevées et semées une par une dans les fosses suivantes, <strong>dans le sens antihoraire</strong>.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">②</div>
+            <div class="step-body">
+              <h5>Le grenier adverse est sauté</h5>
+              <p>Lors du semis, le grenier de l'adversaire est ignoré : aucune graine n'y est déposée. Votre propre grenier, lui, reçoit bien une graine au passage.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">③</div>
+            <div class="step-body">
+              <h5>Tour bonus</h5>
+              <p>Si la <strong>dernière graine</strong> de votre semis atterrit dans votre grenier, vous obtenez un tour bonus et pouvez rejouer immédiatement.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">④</div>
+            <div class="step-body">
+              <h5>Capture</h5>
+              <p>Si la dernière graine tombe dans une fosse <strong>vide de votre camp</strong>, et que la fosse en face (côté adverse) contient des graines, vous capturez toutes ces graines + la vôtre et les placez dans votre grenier.</p>
+            </div>
+          </div>
+          <div class="step">
+            <div class="step-num">⑤</div>
+            <div class="step-body">
+              <h5>Fin de partie</h5>
+              <p>Quand un joueur n'a plus de graines à jouer, toutes les graines restantes dans le camp adverse vont dans le grenier de l'adversaire. Le joueur avec le plus de graines gagne.</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="callout warn" style="margin-top:1.2rem">
+          <span class="callout-icon">⚠️</span>
+          <p><strong>Attention :</strong> Vous ne pouvez jouer que les fosses de votre propre camp. Cliquer sur une fosse adverse ou une fosse vide n'a aucun effet.</p>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── IA ── -->
+      <section id="ia">
+        <div class="section-label">
+          <div class="section-num">6</div>
+          <h3>Intelligence artificielle</h3>
+        </div>
+        <div class="prose">
+          <p>En mode Solo, l'ordinateur joue selon l'un des trois niveaux de difficulté choisi au démarrage. L'IA analyse le plateau et sélectionne son coup automatiquement.</p>
+        </div>
+
+        <div class="diff-grid" style="margin-top:1.2rem">
+          <div class="diff-card">
+            <h4>😊 Facile</h4>
+            <div class="diff-bar-wrap">
+              <div class="diff-bar"><div class="diff-fill" style="width:30%;background:var(--teal)"></div></div>
+            </div>
+            <p>L'IA joue de manière aléatoire. Idéal pour découvrir le jeu ou jouer avec des enfants.</p>
+          </div>
+          <div class="diff-card">
+            <h4>🤔 Moyen</h4>
+            <div class="diff-bar-wrap">
+              <div class="diff-bar"><div class="diff-fill" style="width:60%;background:var(--amber)"></div></div>
+            </div>
+            <p>L'IA privilégie les captures et les tours bonus. Un vrai défi pour les joueurs intermédiaires.</p>
+          </div>
+          <div class="diff-card">
+            <h4>😤 Difficile</h4>
+            <div class="diff-bar-wrap">
+              <div class="diff-bar"><div class="diff-fill" style="width:92%;background:#E53935"></div></div>
+            </div>
+            <p>L'IA utilise un algorithme heuristique pour maximiser ses graines. Réservé aux joueurs expérimentés.</p>
+          </div>
+        </div>
+
+        <div class="callout tip" style="margin-top:1.2rem">
+          <span class="callout-icon">🧠</span>
+          <p><strong>Conseil :</strong> Commencez par le niveau Facile pour maîtriser les règles, puis progressez vers Moyen. Le niveau Difficile simule un joueur humain expérimenté.</p>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── ONLINE ── -->
+      <section id="online">
+        <div class="section-label">
+          <div class="section-num">7</div>
+          <h3>Mode en ligne</h3>
+        </div>
+        <div class="prose">
+          <p>Le mode en ligne utilise la technologie <strong>WebSocket</strong> pour une communication en temps réel entre deux joueurs. Vous pouvez créer une salle et partager son code à un ami, ou rejoindre une salle existante.</p>
+        </div>
+
+        <div class="card-grid cols-2" style="margin-top:1.2rem">
+          <div>
+            <div class="screen-mockup">
+              <div class="screen-bar">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <span>Créer une salle</span>
+              </div>
+              <div class="screen-body">
+                <div class="lobby-fields">
+                  <div class="field-mock">Votre pseudo…</div>
+                  <button class="btn-mock primary" style="width:100%">✚ Créer une salle</button>
+                  <div class="field-mock" style="text-align:center;color:var(--purple);font-weight:600">Code : <strong>AB72</strong></div>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:.5rem">Partagez le code à votre ami</p>
+          </div>
+          <div>
+            <div class="screen-mockup">
+              <div class="screen-bar">
+                <div class="dot"></div><div class="dot"></div><div class="dot"></div>
+                <span>Rejoindre une salle</span>
+              </div>
+              <div class="screen-body">
+                <div class="lobby-fields">
+                  <div class="field-mock">Votre pseudo…</div>
+                  <div class="field-mock">Code de la salle… (ex: AB72)</div>
+                  <button class="btn-mock primary" style="width:100%">→ Rejoindre</button>
+                </div>
+              </div>
+            </div>
+            <p style="font-size:12px;color:var(--muted);text-align:center;margin-top:.5rem">Entrez le code partagé par votre ami</p>
+          </div>
+        </div>
+
+        <div class="callout warn" style="margin-top:1.2rem">
+          <span class="callout-icon">⚠️</span>
+          <p><strong>Prérequis :</strong> Le mode en ligne nécessite que le serveur WebSocket soit actif. Si vous testez en local, lancez d'abord <code>node server.js</code> dans le terminal avant d'ouvrir le jeu.</p>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── FAQ ── -->
+      <section id="faq">
+        <div class="section-label">
+          <div class="section-num">8</div>
+          <h3>Foire aux questions</h3>
+        </div>
+
+        <div class="faq">
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Le jeu fonctionne-t-il sans connexion internet ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>Oui, les modes Solo et Local 2 joueurs fonctionnent entièrement hors ligne. Seul le mode En ligne nécessite une connexion active pour communiquer avec le serveur WebSocket. Notez que les règles (chargées via AJAX) nécessitent un serveur local si vous ouvrez le fichier directement.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Comment relancer une partie sans retourner au menu ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>En bas de l'interface de jeu, un bouton <strong>Nouvelle partie</strong> réinitialise immédiatement le plateau avec les mêmes paramètres (mode et difficulté). Le bouton <strong>Menu</strong> vous ramène à la sélection de mode.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Les règles ne s'affichent pas quand je clique sur le bouton — pourquoi ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>Le chargement des règles utilise AJAX (requête HTTP). Si vous ouvrez <code>index.html</code> directement en double-cliquant (protocole <code>file://</code>), certains navigateurs bloquent cette requête. Solution : utilisez un serveur local (<code>Live Server</code> dans VS Code, ou <code>python -m http.server</code>) pour servir les fichiers.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Puis-je jouer sur mobile ou tablette ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>Oui, l'interface est responsive et s'adapte aux petits écrans. Le plateau se réorganise verticalement et les fosses restent facilement cliquables au doigt. L'expérience optimale reste sur ordinateur pour le mode Local 2 joueurs.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Mon adversaire en ligne s'est déconnecté — que se passe-t-il ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>En cas de déconnexion de l'adversaire, le serveur WebSocket ferme la salle. Vous serez redirigé vers le lobby avec un message d'information. Vous pouvez alors créer ou rejoindre une nouvelle salle.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <button class="faq-q" onclick="toggleFaq(this)">
+              Comment fonctionne la capture de graines exactement ?
+              <div class="faq-arrow">▾</div>
+            </button>
+            <div class="faq-a">
+              <p>Une capture se produit uniquement si : (1) votre dernière graine semée tombe dans une fosse <strong>vide</strong> de votre camp, ET (2) la fosse directement en face (côté adversaire) contient au moins une graine. Dans ce cas, vous prenez toutes les graines de la fosse adverse + la graine qui vient d'arriver, et vous les placez dans votre grenier.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <hr class="divider"/>
+
+      <!-- ── GLOSSAIRE ── -->
+      <section id="glossaire">
+        <div class="section-label">
+          <div class="section-num">9</div>
+          <h3>Glossaire</h3>
+        </div>
+        <table class="rules-table">
+          <thead><tr><th>Terme</th><th>Définition</th></tr></thead>
+          <tbody>
+            <tr><td>Mancala</td><td>Famille de jeux de stratégie africains et asiatiques basés sur le semis et la capture de graines dans des fosses.</td></tr>
+            <tr><td>Fosse</td><td>Alvéole du plateau destinée à contenir des graines. Chaque joueur en possède 6.</td></tr>
+            <tr><td>Grenier</td><td>Grande fosse latérale où sont comptabilisées les graines capturées. Synonyme : Kalaha.</td></tr>
+            <tr><td>Semis</td><td>Action de distribuer les graines d'une fosse une par une dans les fosses suivantes.</td></tr>
+            <tr><td>Capture</td><td>Action de prendre les graines d'une fosse adverse dans certaines conditions.</td></tr>
+            <tr><td>Tour bonus</td><td>Tour supplémentaire accordé quand la dernière graine semée atterrit dans le grenier du joueur.</td></tr>
+            <tr><td>WebSocket</td><td>Protocole de communication en temps réel permettant des échanges bidirectionnels entre navigateur et serveur.</td></tr>
+            <tr><td>AJAX</td><td>Technique JavaScript permettant de charger du contenu depuis un serveur sans recharger la page entière.</td></tr>
+            <tr><td>SPA</td><td>Single Page Application — application web fonctionnant sur une seule page HTML avec navigation dynamique.</td></tr>
+          </tbody>
+        </table>
+      </section>
+
+    </div><!-- /content -->
+
+    <!-- FOOTER -->
+    <footer>
+      <div>
+        <strong>Songo — Documentation Utilisateur</strong><br/>
+        Université de Yaoundé I · Faculté des Sciences
+      </div>
+      <div style="text-align:right">
+        <strong>IFOU FOPA ANGE</strong> — Matricule 2G2205<br/>
+        TP INF 222 — Technologies Web
+      </div>
+    </footer>
+
+  </main>
+</div>
+
+<script>
+  // ── FAQ toggle ──
+  function toggleFaq(btn) {
+    const item = btn.parentElement;
+    const isOpen = item.classList.contains('open');
+    document.querySelectorAll('.faq-item.open').forEach(i => i.classList.remove('open'));
+    if (!isOpen) item.classList.add('open');
+  }
+
+  // ── Active nav link on scroll ──
+  const sections = document.querySelectorAll('section[id]');
+  const navLinks = document.querySelectorAll('.nav-link');
+  const observer = new IntersectionObserver(entries => {
+    entries.forEach(e => {
+      if (e.isIntersecting) {
+        navLinks.forEach(l => l.classList.remove('active'));
+        const link = document.querySelector(`.nav-link[href="#${e.target.id}"]`);
+        if (link) link.classList.add('active');
+      }
+    });
+  }, { rootMargin: '-30% 0px -60% 0px' });
+  sections.forEach(s => observer.observe(s));
+
+  // ── Interactive board mockup ──
+  const B = [4,4,4,4,4,4,0,4,4,4,4,4,4,0];
+  let currentPlayer = 1;
+  let busy = false;
+
+  function renderBoard() {
+    for (let i = 0; i <= 5; i++) renderSeeds('p' + i, B[i], i === lastMoved);
+    for (let i = 7; i <= 12; i++) renderSeeds('p' + i, B[i], false);
+    document.getElementById('s1').textContent = B[6];
+    document.getElementById('s2').textContent = B[13];
+  }
+
+  function renderSeeds(id, count, isLast) {
+    const el = document.getElementById(id);
+    el.innerHTML = '';
+    const show = Math.min(count, 9);
+    for (let i = 0; i < show; i++) {
+      const d = document.createElement('div');
+      d.className = 'seed' + (isLast && i === show - 1 ? ' green' : '');
+      el.appendChild(d);
+    }
+    if (count > 9) {
+      const sp = document.createElement('span');
+      sp.style.cssText = 'font-size:10px;color:#fff;font-weight:700';
+      sp.textContent = count;
+      el.innerHTML = '';
+      el.appendChild(sp);
+    }
+  }
+
+  let lastMoved = -1;
+
+  async function clickPit(idx) {
+    if (busy || B[idx] === 0) return;
+    busy = true;
+    const seeds = B[idx];
+    B[idx] = 0;
+    let pos = idx;
+    for (let s = 0; s < seeds; s++) {
+      pos = (pos + 1) % 14;
+      if (pos === 13) pos = 0; // skip opponent store (demo simplification)
+      B[pos]++;
+      lastMoved = pos;
+      renderBoard();
+      await sleep(120);
+    }
+    busy = false;
+  }
+
+  function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+  renderBoard();
+</script>
+
+</body>
+</html>

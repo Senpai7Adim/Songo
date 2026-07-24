@@ -1,94 +1,419 @@
 <!DOCTYPE html>
-<html lang="fr">
+<html lang="fr" data-theme="dark">
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
-<title>Songo — Mancala Camerounais</title>
+<title>Songo — Mancala Camerounais | Édition Premium</title>
+<meta name="description" content="Jouez au Songo, le mancala camerounais traditionnel. Solo contre ordinateur, local à 2 joueurs ou en ligne. Expérience premium inspirée de l'artisanat africain.">
+<meta name="theme-color" content="#1A1208">
 <link rel="manifest" href="manifest.json">
-<meta name="theme-color" content="#F5D08A">
+
+<!-- Preconnect for fonts -->
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
 <link rel="stylesheet" href="style.css">
-<!--IFOU FOPA ANGE - 24G2205-->
+
+<!-- Screen reader live region -->
+<div id="sr-announce" class="sr-only" aria-live="polite" aria-atomic="true"></div>
 </head>
 <body>
 
-<div id="menu" class="overlay">
-  <div class="menu-box">
-    <h1>Songo</h1>
-    <div class="sub">Mancala camerounais</div>
-    <button class="mode-btn" onclick="startMode('ai')"><span class="ico">🤖</span> Solo vs Ordinateur<span class="desc">3 niveaux de difficulté</span></button>
-    <button class="mode-btn" onclick="startMode('local')"><span class="ico">👥</span> Local à 2 joueurs<span class="desc">Même écran, tour par tour</span></button>
-    <button class="mode-btn" onclick="startMode('online')"><span class="ico">🌐</span> En ligne<span class="desc">Jouez avec un ami à distance</span></button>
+<!-- ═══════════════════════════════════════════════════════════
+     GLOBAL UI
+     ═══════════════════════════════════════════════════════════ -->
+
+<!-- Toast container -->
+<div id="toast-container" role="status" aria-live="polite"></div>
+
+<!-- Network chip -->
+<div id="net-indicator" class="net-chip hidden" role="status" aria-label="Statut réseau">
+  <span class="net-dot" id="net-dot"></span>
+  <span id="net-text">Hors ligne</span>
+  <span id="net-ping"></span>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MATCH FOUND OVERLAY
+     ═══════════════════════════════════════════════════════════ -->
+<div id="match-found-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Adversaire trouvé">
+  <div class="match-found-box">
+    <h2>Adversaire Trouvé !</h2>
+    <div class="mf-avatars">
+      <div class="mf-avatar mf-pulse" id="mf-avatar-me">👤</div>
+      <div class="mf-vs">VS</div>
+      <div class="mf-avatar mf-pulse" id="mf-avatar-opp">👤</div>
+    </div>
+    <p>Préparez-vous…</p>
   </div>
 </div>
 
-<div id="lobby" class="overlay hidden">
-  <div class="lobby-box">
-    <h2 id="lobby-title">En ligne</h2>
+<!-- ═══════════════════════════════════════════════════════════
+     COUNTDOWN OVERLAY
+     ═══════════════════════════════════════════════════════════ -->
+<div id="countdown-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-label="Décompte"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     GAME END MODAL
+     ═══════════════════════════════════════════════════════════ -->
+<div id="end-modal-overlay" class="overlay hidden" role="dialog" aria-modal="true" aria-labelledby="end-modal-title">
+  <div class="end-modal" id="end-modal">
+    <span class="end-icon" id="end-icon">🎉</span>
+    <h2 id="end-modal-title">Victoire !</h2>
+    <p id="end-modal-sub" style="color:var(--text-secondary);font-size:0.9rem;margin-top:4px"></p>
+    <div class="end-scores" id="end-scores">
+      <div class="end-score-item" id="end-score-you">
+        <div class="end-score-name" id="end-name-you">Vous</div>
+        <div class="end-score-val" id="end-val-you">0</div>
+      </div>
+      <div class="end-score-sep">—</div>
+      <div class="end-score-item" id="end-score-opp">
+        <div class="end-score-name" id="end-name-opp">Adversaire</div>
+        <div class="end-score-val" id="end-val-opp">0</div>
+      </div>
+    </div>
+    <div class="end-actions">
+      <button class="btn primary-btn" id="end-rematch-btn" onclick="ng()">↺ Revanche</button>
+      <button class="btn ghost-btn" onclick="backToMenu()">← Menu principal</button>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     MAIN MENU
+     ═══════════════════════════════════════════════════════════ -->
+<div id="menu" class="overlay hero-bg" role="main" aria-label="Menu principal">
+  <div class="kente-accent"></div>
+  <div class="menu-box premium-card">
+    <h1 class="logo-text">Songo</h1>
+    <div class="sub-title">Mancala Camerounais</div>
+
+    <nav aria-label="Modes de jeu" style="margin-top:1.75rem">
+      <button class="mode-btn" id="btn-ai" onclick="startMode('ai')" aria-label="Solo contre l'ordinateur, 3 niveaux de difficulté">
+        <span class="mode-icon" aria-hidden="true">🤖</span>
+        <div class="mode-text">
+          <span class="mode-title">Solo vs Ordinateur</span>
+          <span class="desc">3 niveaux de difficulté</span>
+        </div>
+      </button>
+      <button class="mode-btn" id="btn-local" onclick="startMode('local')" aria-label="Jeu local à 2 joueurs sur le même écran">
+        <span class="mode-icon" aria-hidden="true">👥</span>
+        <div class="mode-text">
+          <span class="mode-title">Local à 2 joueurs</span>
+          <span class="desc">Même écran, tour par tour</span>
+        </div>
+      </button>
+      <button class="mode-btn" id="btn-online" onclick="startMode('online')" aria-label="Jouer en ligne avec un ami à distance">
+        <span class="mode-icon" aria-hidden="true">🌐</span>
+        <div class="mode-text">
+          <span class="mode-title">En ligne</span>
+          <span class="desc">Jouez avec un ami à distance</span>
+        </div>
+      </button>
+    </nav>
+
+    <div style="display: flex; gap: 10px; width: 100%; margin-top: 1rem;">
+      <button class="btn settings-btn" onclick="openSettings()" aria-label="Ouvrir les paramètres" style="flex: 1; margin-top: 0;">
+        ⚙️ Paramètres
+      </button>
+      <a href="/doc/" class="btn settings-btn" aria-label="Ouvrir la documentation" style="flex: 1; margin-top: 0; text-decoration: none; display: flex; justify-content: center; align-items: center;">
+        📖 Manuel
+      </a>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     LOBBY (ONLINE)
+     ═══════════════════════════════════════════════════════════ -->
+<div id="lobby" class="overlay hidden hero-bg" role="main" aria-label="Salle en ligne">
+  <div class="kente-accent"></div>
+  <div class="lobby-box premium-card">
+    <h2 id="lobby-title" style="font-family:var(--font-title);font-size:1.5rem;margin-bottom:0.5rem">En Ligne</h2>
     <p id="conn-status" class="wait" style="margin-bottom:10px">Connexion…</p>
-    <p class="wait" style="font-size:11px;margin-bottom:12px">Lancez d'abord <code>npm start</code>, puis ouvrez <b>http://localhost:3000</b> (pas le fichier HTML directement).</p>
+
+    <!-- Create room -->
     <div id="lobby-create">
-      <p class="wait">Créez une salle et partagez le code</p>
-      <button class="btn" onclick="createRoom()">Créer une salle</button>
+      <p class="wait" style="margin-bottom:1rem">Créez une salle et partagez le code</p>
+      <button class="btn primary-btn w-100" onclick="createRoom()" id="create-room-btn">
+        ✦ Créer une salle
+      </button>
     </div>
+
+    <!-- Waiting for opponent -->
     <div id="lobby-waiting" class="hidden">
-      <p class="wait">Code de la salle :</p>
-      <div class="room-code" id="room-code"></div>
-      <p class="wait">Partagez ce code avec votre ami</p>
-      <p class="wait" style="font-size:11px;margin-top:6px;word-break:break-all" id="share-url"></p>
-      <p class="wait" style="margin-top:8px">En attente d'un adversaire…</p>
+      <p class="wait" style="margin-bottom:10px">Code de la salle :</p>
+      <div class="room-code-wrap">
+        <div class="room-code-digits" id="room-code-digits"></div>
+        <button onclick="copyCode()" class="icon-btn" title="Copier le code" aria-label="Copier le code de la salle">📋</button>
+      </div>
+      <p class="wait" style="font-size:0.8rem;margin-bottom:4px">Partagez ce code avec votre ami</p>
+      <p class="share-url" id="share-url"></p>
+      <div class="skeleton-loader" style="margin-top:1rem">En attente d'un adversaire…</div>
     </div>
-    <div id="lobby-join">
-      <p class="wait" style="margin-top:1rem">Ou rejoindre une salle</p>
-      <input id="join-code" maxlength="6" placeholder="CODE">
-      <button class="btn" onclick="joinRoom()">Rejoindre</button>
+
+    <!-- Join room -->
+    <div id="lobby-join" style="margin-top:1.25rem">
+      <p class="wait" style="margin-bottom:6px">Ou rejoindre une salle existante</p>
+      <input
+        id="join-code"
+        type="text"
+        maxlength="6"
+        placeholder="CODE"
+        autocomplete="off"
+        spellcheck="false"
+        aria-label="Entrez le code de la salle"
+      >
+      <button class="btn primary-btn w-100" onclick="joinRoom()" style="margin-top:0">
+        → Rejoindre
+      </button>
     </div>
-    <p id="lobby-err" style="color:#e55;font-size:13px;margin-top:8px"></p>
-    <button class="rb" style="margin-top:1rem" onclick="backToMenu()">← Retour</button>
+
+    <p id="lobby-err" class="error-text" role="alert"></p>
+    <button class="rb" style="margin-top:1rem" onclick="backToMenu()">← Retour au menu</button>
   </div>
 </div>
 
-<div id="game" class="gc hidden">
-  <div class="mode-tag" id="mode-tag"></div>
-  <div class="hdr">
-    <div class="pcard" id="cai"><div class="lb" id="lb-ai">Adversaire</div><div class="sc" id="scai">0</div></div>
-    <div class="hdr-mid"><div class="title">Songo</div><div class="sub">Cameroun</div></div>
-    <div class="pcard" id="cyo"><div class="lb" id="lb-yo">Vous</div><div class="sc" id="scyo">0</div></div>
+<!-- ═══════════════════════════════════════════════════════════
+     SETTINGS DRAWER
+     ═══════════════════════════════════════════════════════════ -->
+<div id="settings-panel" class="settings-drawer" role="dialog" aria-modal="true" aria-label="Paramètres" aria-hidden="true">
+  <div class="settings-header">
+    <h3>Paramètres</h3>
+    <button class="icon-btn" onclick="closeSettings()" aria-label="Fermer les paramètres">✕</button>
   </div>
-  <div class="diff-row" id="diff-row">
-    <button class="db on" onclick="sd(1,this)">😊 Facile</button>
-    <button class="db" onclick="sd(2,this)">🧠 Moyen</button>
-    <button class="db" onclick="sd(3,this)">🔥 Difficile</button>
-  </div>
-  <div class="leg" id="legend">
-    <span><span class="ld" style="background:#F5D08A"></span>Joueur 1</span>
-    <span><span class="ld" style="background:#88BBFF"></span>Joueur 2</span>
-    <span><span class="ld" style="background:#80EE80"></span>Capture</span>
-    <span><span class="ld" style="background:#FFB830"></span>Tour bonus</span>
-  </div>
-  <div id="pause-banner" class="pause-banner">
-    <div id="pause-title">Adversaire déconnecté</div>
-    <div class="cd" id="pause-cd">1:30</div>
-    <div class="sub" id="pause-sub">La partie reprendra s'il revient avant la fin du délai.</div>
-  </div>
-  <div class="infobar" id="inf">Chargement…</div>
-  <div class="board-wrap" id="bwrap">
-    <div class="board">
-      <div class="store" id="stai"><span class="sv" id="svai">0</span><span class="slb" id="slb-ai">J2</span></div>
-      <div class="pw"><div class="row" id="rai"></div><div class="row" id="ryo"></div></div>
-      <div class="store" id="styo"><span class="sv" id="svyo">0</span><span class="slb" id="slb-yo">J1</span></div>
+  <div class="settings-body">
+
+    <!-- Sound & Music -->
+    <div class="settings-section-label">Audio</div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">🔊 Sons</div>
+        <div class="setting-sub">Effets sonores du jeu</div>
+      </div>
+      <label class="switch" aria-label="Activer les sons">
+        <input type="checkbox" id="sound-toggle" checked onchange="toggleSound()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">🎵 Musique</div>
+        <div class="setting-sub">Ambiance musicale africaine</div>
+      </div>
+      <label class="switch" aria-label="Activer la musique">
+        <input type="checkbox" id="music-toggle" onchange="toggleMusic()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Appearance -->
+    <div class="settings-section-label">Apparence</div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">🌙 Thème sombre</div>
+        <div class="setting-sub">Mode sombre / clair</div>
+      </div>
+      <label class="switch" aria-label="Mode sombre">
+        <input type="checkbox" id="theme-toggle" checked onchange="toggleTheme()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">⚡ Animations</div>
+        <div class="setting-sub">Vitesse des animations</div>
+      </div>
+      <select class="setting-select" id="anim-speed" onchange="setAnimSpeed(this.value)" aria-label="Vitesse des animations">
+        <option value="fast">Rapide</option>
+        <option value="normal" selected>Normale</option>
+        <option value="slow">Lente</option>
+      </select>
+    </div>
+
+    <!-- Gameplay -->
+    <div class="settings-section-label">Jeu</div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">🔔 Notifications</div>
+        <div class="setting-sub">Alertes de tour (en ligne)</div>
+      </div>
+      <label class="switch" aria-label="Notifications de tour">
+        <input type="checkbox" id="notif-toggle" checked onchange="toggleNotif()">
+        <span class="slider"></span>
+      </label>
+    </div>
+    <div class="setting-item">
+      <div>
+        <div class="setting-label">📱 Vibration</div>
+        <div class="setting-sub">Retour haptique (mobile)</div>
+      </div>
+      <label class="switch" aria-label="Vibration haptique">
+        <input type="checkbox" id="vibration-toggle" checked onchange="toggleVibration()">
+        <span class="slider"></span>
+      </label>
+    </div>
+
+    <!-- Info -->
+    <div class="settings-section-label">À propos</div>
+    <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:4px">
+      <div class="setting-label">Songo — Édition Premium</div>
+      <div class="setting-sub">Mancala camerounais traditionnel</div>
+      <div class="setting-sub" style="margin-top:4px">v2.1.0 · Ifou Fopa Ange</div>
     </div>
   </div>
-  <div class="dir">← sens antihoraire &nbsp;|&nbsp; Survolez une fosse pour voir la distribution</div>
-  <div class="btns">
-    <button class="btn" onclick="ng()">Nouvelle partie</button>
-    <button class="btn" onclick="backToMenu()">Menu</button>
-    <button class="rb" onclick="tr()">Règles</button>
-  </div>
-  <div id="em" class="em"></div>
-  <div id="rp" class="rp"></div>
 </div>
+<!-- Settings backdrop -->
+<div id="settings-backdrop" style="display:none;position:fixed;inset:0;z-index:599;background:rgba(13,10,5,0.5);backdrop-filter:blur(2px)" onclick="closeSettings()"></div>
 
+<!-- ═══════════════════════════════════════════════════════════
+     GAME SCREEN
+     ═══════════════════════════════════════════════════════════ -->
+<div id="game" class="gc hidden" role="main" aria-label="Plateau de jeu">
+  <div class="game-layout">
+
+    <!-- ── Main board column ── -->
+    <div class="main-area">
+
+      <!-- Mode tag -->
+      <div class="mode-tag" id="mode-tag" aria-label="Mode de jeu"></div>
+
+      <!-- ── Opponent Player Card ── -->
+      <div class="player-card" id="cai" role="region" aria-label="Carte adversaire">
+        <div class="player-info">
+          <div class="avatar" aria-hidden="true">
+            <div class="avatar-ring"></div>
+            <span id="av-ai">🤖</span>
+          </div>
+          <div class="details">
+            <div class="name-row">
+              <span class="name" id="lb-ai">Adversaire</span>
+              <span class="status-dot" id="dot-ai" aria-hidden="true"></span>
+            </div>
+            <div class="sub-info">
+              <span class="flag" id="flag-ai" aria-hidden="true">🇨🇲</span>
+              <span class="elo" id="elo-ai" aria-label="ELO">1200</span>
+              <span class="ping-indicator" id="ping-ai" aria-hidden="true">
+                <span class="ping-bar">
+                  <span></span><span></span><span></span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+        <div class="score-box">
+          <div class="timer" id="time-ai" aria-label="Temps restant adversaire">10:00</div>
+          <div class="sc" id="scai" aria-label="Score adversaire">0</div>
+          <div class="thinking-dots" id="think-ai" aria-label="L'adversaire réfléchit">
+            <span></span><span></span><span></span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Difficulty selector (AI mode only) -->
+      <div class="diff-row" id="diff-row" role="group" aria-label="Difficulté de l'IA">
+        <button class="db on" onclick="sd(1,this)" aria-pressed="true">😊 Facile</button>
+        <button class="db"    onclick="sd(2,this)" aria-pressed="false">🧠 Moyen</button>
+        <button class="db"    onclick="sd(3,this)" aria-pressed="false">🔥 Difficile</button>
+      </div>
+
+      <!-- Disconnect pause banner -->
+      <div id="pause-banner" class="pause-banner" role="alert" aria-live="assertive">
+        <div id="pause-title">Adversaire déconnecté</div>
+        <div class="cd" id="pause-cd">1:30</div>
+        <div class="sub" id="pause-sub">La partie reprendra s'il revient avant la fin du délai.</div>
+      </div>
+
+      <!-- ── Board ── -->
+      <div class="board-wrap" id="bwrap">
+        <div class="board" id="board" role="grid" aria-label="Plateau de Songo">
+          <!-- Opponent store (left) -->
+          <div class="store" id="stai" role="cell" aria-label="Grenier adversaire">
+            <span class="sv" id="svai">0</span>
+            <span class="slb" id="slb-ai">J2</span>
+          </div>
+          <!-- Pit rows -->
+          <div class="pw">
+            <div class="row" id="rai" role="row" aria-label="Fosses adversaire"></div>
+            <div class="row" id="ryo" role="row" aria-label="Vos fosses"></div>
+          </div>
+          <!-- Player store (right) -->
+          <div class="store" id="styo" role="cell" aria-label="Votre grenier">
+            <span class="sv" id="svyo">0</span>
+            <span class="slb" id="slb-yo">J1</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── My Player Card ── -->
+      <div class="player-card" id="cyo" role="region" aria-label="Votre carte joueur">
+        <div class="player-info">
+          <div class="avatar" aria-hidden="true">
+            <div class="avatar-ring"></div>
+            <span id="av-yo">👤</span>
+          </div>
+          <div class="details">
+            <div class="name-row">
+              <span class="name" id="lb-yo">Vous</span>
+              <span class="status-dot online" id="dot-yo" aria-hidden="true"></span>
+            </div>
+            <div class="sub-info">
+              <span class="flag" id="flag-yo" aria-hidden="true">🇨🇲</span>
+              <span class="elo" id="elo-yo" aria-label="ELO">1200</span>
+            </div>
+          </div>
+        </div>
+        <div class="score-box">
+          <div class="timer" id="time-yo" aria-label="Votre temps restant">10:00</div>
+          <div class="sc" id="scyo" aria-label="Votre score">0</div>
+        </div>
+      </div>
+
+      <!-- Turn infobar -->
+      <div class="infobar-wrapper">
+        <div class="infobar" id="inf" role="status" aria-live="polite">Chargement…</div>
+      </div>
+
+    </div><!-- /.main-area -->
+
+    <!-- ── Side Panel / Bottom sheet ── -->
+    <div class="side-panel" role="complementary" aria-label="Panneau de jeu">
+
+      <!-- Action bar -->
+      <div class="action-bar">
+        <button class="btn icon-btn" onclick="openSettings()" title="Paramètres" aria-label="Ouvrir les paramètres">⚙️</button>
+        <button class="btn" id="btn-undo" onclick="undoMove()" style="display:none" title="Annuler le dernier coup" aria-label="Annuler">↩ Annuler</button>
+        <button class="btn" id="btn-draw" onclick="requestDraw()" style="display:none" aria-label="Proposer la nulle">🤝 Nulle</button>
+        <button class="btn danger-btn" id="btn-resign" onclick="confirmResign()" style="display:none" aria-label="Abandonner la partie">🏳 Abandonner</button>
+        <button class="btn" onclick="ng()" id="btn-rematch" aria-label="Nouvelle partie">↺ Revanche</button>
+        <button class="btn ghost-btn" onclick="backToMenu()" aria-label="Retour au menu">← Quitter</button>
+      </div>
+
+      <!-- Move history -->
+      <div class="move-history" id="move-history" aria-label="Historique des coups">
+        <div class="history-title">Historique</div>
+        <div class="history-list" id="history-list" role="log" aria-live="polite" aria-label="Coups joués">
+          <!-- Populated by JS -->
+        </div>
+      </div>
+
+    </div><!-- /.side-panel -->
+
+  </div><!-- /.game-layout -->
+
+  <!-- Legacy inline end message (hidden when modal is used) -->
+  <div id="em" class="em" role="status" aria-live="assertive"></div>
+
+</div><!-- /#game -->
+
+<!-- ── Resign confirm box (injected dynamically by JS) ─────── -->
+
+<!-- Scripts -->
 <script src="/socket.io/socket.io.js"></script>
+<script src="sounds.js"></script>
+<script src="animations.js"></script>
 <script src="script.js"></script>
+
 </body>
 </html>
