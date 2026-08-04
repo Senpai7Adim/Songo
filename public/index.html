@@ -125,6 +125,59 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
+     AI SETUP MENU
+     ═══════════════════════════════════════════════════════════ -->
+<div id="ai-setup" class="overlay hidden hero-bg" role="main" aria-label="Configuration Solo">
+  <div class="kente-accent"></div>
+  <div class="menu-box premium-card" style="max-width: 500px; padding: 2rem;">
+    <!-- Header -->
+    <div style="display: flex; align-items: center; gap: 1rem; margin-bottom: 1.5rem;">
+      <button class="icon-btn" onclick="backToMenu()" style="font-size: 1.5rem; color: var(--text-secondary);" title="Retour" aria-label="Retour au menu principal">←</button>
+      <h2 style="font-family: var(--font-title); font-size: 1.5rem; margin: 0; display: flex; align-items: center; gap: 0.5rem; color: var(--color-gold-200);">
+        🤖 Solo vs Ordinateur
+      </h2>
+    </div>
+
+    <!-- Adversary -->
+    <div style="margin-bottom: 1.5rem;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; font-weight: 600;">Choisissez votre adversaire</div>
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <button class="btn ghost-btn setup-opt diff-opt active" onclick="selectSetupOpt('diff', 1, this)" style="justify-content: flex-start;">😊 Débutant</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 2, this)" style="justify-content: flex-start;">🧠 Intermédiaire</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 3, this)" style="justify-content: flex-start;">🔥 Expert</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 4, this)" style="justify-content: flex-start;">👑 Maître</button>
+      </div>
+    </div>
+
+    <!-- Time -->
+    <div style="margin-bottom: 1.5rem;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; font-weight: 600;">Temps</div>
+      <div style="display: grid; grid-template-columns: repeat(4, 1fr); gap: 0.75rem;">
+        <button class="btn ghost-btn setup-opt time-opt active" onclick="selectSetupOpt('time', 0, this)">∞</button>
+        <button class="btn ghost-btn setup-opt time-opt" onclick="selectSetupOpt('time', 3, this)">3 min</button>
+        <button class="btn ghost-btn setup-opt time-opt" onclick="selectSetupOpt('time', 5, this)">5 min</button>
+        <button class="btn ghost-btn setup-opt time-opt" onclick="selectSetupOpt('time', 10, this)">10 min</button>
+      </div>
+    </div>
+
+    <!-- Who starts -->
+    <div style="margin-bottom: 2rem;">
+      <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; font-weight: 600;">Qui commence ?</div>
+      <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 0.75rem;">
+        <button class="btn ghost-btn setup-opt start-opt active" onclick="selectSetupOpt('start', 'user', this)">Vous</button>
+        <button class="btn ghost-btn setup-opt start-opt" onclick="selectSetupOpt('start', 'ai', this)">Ordinateur</button>
+        <button class="btn ghost-btn setup-opt start-opt" onclick="selectSetupOpt('start', 'random', this)">Aléatoire</button>
+      </div>
+    </div>
+
+    <!-- Start Button -->
+    <button class="btn primary-btn w-100" onclick="launchAIGame()" style="font-size: 1.1rem; padding: 1rem; display: flex; justify-content: center; align-items: center; gap: 8px;">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg> Commencer
+    </button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
      LOBBY (ONLINE)
      ═══════════════════════════════════════════════════════════ -->
 <div id="lobby" class="overlay hidden hero-bg" role="main" aria-label="Salle en ligne">
@@ -294,6 +347,7 @@
             <div class="sub-info">
               <span class="flag" id="flag-ai" aria-hidden="true">🇨🇲</span>
               <span class="elo" id="elo-ai" aria-label="ELO">1200</span>
+              <span id="diff-tag" style="font-size:0.72rem;color:var(--color-gold-300);font-weight:600;letter-spacing:0.5px;display:none;"></span>
               <span class="ping-indicator" id="ping-ai" aria-hidden="true">
                 <span class="ping-bar">
                   <span></span><span></span><span></span>
@@ -311,12 +365,7 @@
         </div>
       </div>
 
-      <!-- Difficulty selector (AI mode only) -->
-      <div class="diff-row" id="diff-row" role="group" aria-label="Difficulté de l'IA">
-        <button class="db on" onclick="sd(1,this)" aria-pressed="true">😊 Facile</button>
-        <button class="db"    onclick="sd(2,this)" aria-pressed="false">🧠 Moyen</button>
-        <button class="db"    onclick="sd(3,this)" aria-pressed="false">🔥 Difficile</button>
-      </div>
+      <!-- Difficulty selector removed because it's handled in the AI setup menu -->
 
       <!-- Disconnect pause banner -->
       <div id="pause-banner" class="pause-banner" role="alert" aria-live="assertive">

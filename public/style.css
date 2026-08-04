@@ -266,6 +266,13 @@ h1,h2,h3,h4 { font-weight: 600; line-height: 1.2; }
   border-color: var(--border-subtle);
 }
 .ghost-btn:hover { color: var(--text-primary); border-color: var(--border-primary); }
+.ghost-btn.active {
+  background: linear-gradient(135deg, rgba(212,175,55,0.18), rgba(212,175,55,0.06));
+  color: var(--color-gold-200);
+  border-color: var(--color-gold-400);
+  box-shadow: 0 0 0 1px rgba(212,175,55,0.3), 0 2px 8px rgba(212,175,55,0.15);
+  font-weight: 600;
+}
 
 /* Mode buttons */
 .mode-btn {

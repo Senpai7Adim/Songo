@@ -17,7 +17,7 @@ let B=[], turn=1, over=false, busy=false, diff=1, actx;
 let mode='ai', myPlayer=1, socket=null, roomCode=null;
 let pendingState=null, lastMoveSeq=-1;
 let gamePaused=false, pauseTimer=null;
-
+let gameClock=null, p1Time=0, p2Time=0;
 // UX state
 let _undoStack   = [];   // { B, turn } snapshots for offline undo
 let _pingTimer   = null;
@@ -42,6 +42,35 @@ function own(i,p){ return p===1?P1.includes(i):P2.includes(i); }
 function gs(p)   { return p===1?P1S:P2S; }
 function wt(ms)  { return new Promise(r=>setTimeout(r,ms)); }
 function flipped(){ return mode==='online'&&myPlayer===2; }
+
+function formatTime(s) {
+  if(s<0) s=0; const m=Math.floor(s/60), sec=s%60;
+  return m+':'+(sec<10?'0':'')+sec;
+}
+function stopTimers() {
+  if(gameClock){ clearInterval(gameClock); gameClock=null; }
+}
+function startTimers() {
+  stopTimers();
+  const ty=document.getElementById('time-yo'), ta=document.getElementById('time-ai');
+  if(!ty || !ta) return;
+  if(mode!=='ai' || !aiConfig.time){ ty.textContent='∞'; ta.textContent='∞'; return; }
+  p1Time = p2Time = aiConfig.time * 60;
+  ty.textContent = formatTime(p1Time); ta.textContent = formatTime(p2Time);
+  gameClock = setInterval(()=>{
+    if(over || busy || gamePaused) return;
+    if(turn===1){ p1Time--; ty.textContent=formatTime(p1Time); if(p1Time<=0)handleTimeOut(1); }
+    else { p2Time--; ta.textContent=formatTime(p2Time); if(p2Time<=0)handleTimeOut(2); }
+  }, 1000);
+}
+function handleTimeOut(lostP) {
+  stopTimers(); over=true; rendAll();
+  const y=B[P1S], a=B[P2S];
+  const msg=lostP===1?'Temps écoulé (Vous)':'Temps écoulé (Ordinateur)';
+  const res=lostP===1?'loss':'win';
+  if(res==='win')snd('victory'); else snd('defeat');
+  Animations.showEndModal(res, msg, y, a, pName(1), pName(2));
+}
 
 /* ══════════════════════════════════════════════════════════════
    BOARD MAPPING → DOM
@@ -146,7 +175,8 @@ function scB(b){ return b[P2S]-b[P1S]+P2.reduce((a,i)=>a+b[i]*0.08,0); }
 function aiEz(){ const m=P2.filter(i=>B[i]>0); return m.length?m[Math.floor(Math.random()*m.length)]:null; }
 function aiMd(){ const mv=P2.filter(i=>B[i]>0); if(!mv.length)return null; let best=null,bs=-Infinity; mv.forEach(m=>{let t=[...B];const r=apM(t,m,2);let s=scB(t);if(r.ex)s+=6;if(s>bs){bs=s;best=m;}}); return best; }
 function aiHd(){ const mv=P2.filter(i=>B[i]>0); if(!mv.length)return null; let best=null,bs=-Infinity; mv.forEach(m=>{let t=[...B];const r=apM(t,m,2);let s=scB(t); if(r.ex){const m2=P2.filter(i=>t[i]>0);if(m2.length){let b2=-Infinity;m2.forEach(mm=>{let t2=[...t];apM(t2,mm,2);b2=Math.max(b2,scB(t2));});s+=b2*0.55;}} else{const om=P1.filter(i=>t[i]>0);if(om.length){let w=Infinity;om.forEach(mm=>{let t2=[...t];apM(t2,mm,1);w=Math.min(w,scB(t2));});s=s*0.5+w*0.5;}} if(s>bs){bs=s;best=m;}}); return best; }
-function aip(){ return diff===1?aiEz():diff===2?aiMd():aiHd(); }
+function aiMt(){ const mv=P2.filter(i=>B[i]>0); if(!mv.length)return null; let best=null,bs=-Infinity; mv.forEach(m=>{let t=[...B];const r=apM(t,m,2);let s=scB(t); if(r.ex){const m2=P2.filter(i=>t[i]>0);if(m2.length){let b2=-Infinity;m2.forEach(mm=>{let t2=[...t];const r2=apM(t2,mm,2);let s2=scB(t2); if(r2.ex)s2+=3; b2=Math.max(b2,s2);});s+=b2*0.8;}} else{const om=P1.filter(i=>t[i]>0);if(om.length){let w=Infinity;om.forEach(mm=>{let t2=[...t];const r2=apM(t2,mm,1);let s2=scB(t2); if(r2.ex){const m3=P1.filter(i=>t2[i]>0);if(m3.length){let w2=Infinity;m3.forEach(mmm=>{let t3=[...t2];apM(t3,mmm,1);w2=Math.min(w2,scB(t3));});s2=Math.min(s2,w2)-2;}} w=Math.min(w,s2);});s=s*0.3+w*0.7;}} if(s>bs){bs=s;best=m;}}); return best; }
+function aip(){ return diff===1?aiEz():diff===2?aiMd():diff===3?aiHd():aiMt(); }
 
 /* ══════════════════════════════════════════════════════════════
    GAME STATE HELPERS
@@ -184,7 +214,7 @@ async function animM(pi, p, opts){
     uc(cur); await wt(Math.round(s*0.58));
   }
 
-  const ex=cur===gs(p); let cap=false;
+  const ex=cur===gs(p); let cap=0;
   if(ex){
     const se2=gEl(gs(p)); ta(se2,p===1?'asg':'asb'); fl(se2,'✨',col);
     snd('bonus_turn');
@@ -194,14 +224,14 @@ async function animM(pi, p, opts){
   if(!ex&&own(cur,p)&&B[cur]===1){
     const o=opp(cur);
     if(B[o]>0){
-      cap=true; const cpt=B[o]+1;
-      setInf('<span class="sd" style="background:'+CG+'"></span> Capture de <b>'+cpt+'</b> graines !');
+      cap=B[o]+1;
+      setInf('<span class="sd" style="background:'+CG+'"></span> Capture de <b>'+cap+'</b> graines !');
       await wt(160);
       ta(gEl(cur),'acp'); ta(gEl(o),'acp'); snd('capture');
       Animations.vibrate([50,30,80]);
       await wt(Math.round(380*spd()));
-      B[gs(p)]+=cpt; B[cur]=0; B[o]=0; uc(cur); uc(o); uc(gs(p));
-      const st2=gEl(gs(p)); ta(st2,'asn'); fl(st2,'+'+cpt,CG);
+      B[gs(p)]+=cap; B[cur]=0; B[o]=0; uc(cur); uc(o); uc(gs(p));
+      const st2=gEl(gs(p)); ta(st2,'asn'); fl(st2,'+'+cap,CG);
       await wt(Math.round(300*spd()));
     }
   }
@@ -253,8 +283,11 @@ async function click(idx){
   const undoBtn=document.getElementById('btn-undo');
   if(undoBtn&&mode!=='online') undoBtn.style.display='';
 
+  const numSeeds = B[idx];
   busy=true; rend(false);
   const r=await animM(idx,p,{});
+  addHistoryEntry({player: p, pit: idx, seeds: numSeeds, extra: r.ex, captured: r.cap});
+  
   chkEnd(); if(over){busy=false;return;}
   if(r.ex){ turn=p; busy=false; rend(); setInf('<span style="color:'+(p===1?C1:C2)+'">▶</span> '+pName(p)+' rejoue !'); }
   else if(mode==='ai'&&p===1){
@@ -276,10 +309,13 @@ async function runAI(){
   const m=aip();
   if(m===null){ Animations.setThinking(false); turn=1; busy=false; rend(); setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !'); return; }
   const se=gEl(m); if(se)se.classList.add('sa');
+  const numSeeds = B[m];
   setInf('<span class="sd" style="background:'+C2+'"></span> Fosse n°'+(m-6)+' — '+B[m]+' graine'+(B[m]>1?'s':''));
   await wt(Math.round(380*spd()));
   Animations.setThinking(false);
   const r=await animM(m,2,{});
+  addHistoryEntry({player: 2, pit: m, seeds: numSeeds, extra: r.ex, captured: r.cap});
+  
   chkEnd(); if(over){busy=false;return;}
   if(r.ex){ setInf('<span style="color:'+C2+'">▶</span> L\'ordi rejoue…'); await wt(diff===1?280:diff===2?450:680); await runAI(); }
   else { turn=1; busy=false; rend(); setInf('<span style="color:'+C1+'">▶</span> À vous de jouer !'); }
@@ -465,7 +501,6 @@ function showGame(){
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('lobby').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
-  document.getElementById('diff-row').style.display=mode==='ai'?'flex':'none';
   const tags={ai:'🤖 Solo vs Ordinateur',local:'👥 Local à 2 joueurs',online:'🌐 En ligne — '+roomCode};
   document.getElementById('mode-tag').textContent=tags[mode]||'';
   Animations.hideEndModal();
@@ -487,13 +522,20 @@ function showGame(){
    ══════════════════════════════════════════════════════════════ */
 function ng(){
   if(mode==='online'&&socket&&roomCode){lastMoveSeq=-1;socket.emit('rematch');Animations.hideEndModal();return;}
-  init(); turn=1; over=false; busy=false; lastMoveSeq=-1; _undoStack=[];
+  init(); turn=1;
+  if(mode==='ai'){
+    if(aiConfig.start==='ai') turn=2;
+    else if(aiConfig.start==='random') turn=Math.random()<0.5?1:2;
+  }
+  over=false; busy=false; lastMoveSeq=-1; _undoStack=[];
   Animations.hideEndModal();
   document.getElementById('em').style.display='none';
   document.getElementById('em').textContent='';
   document.getElementById('history-list').innerHTML='';
   clrH(); rend(); setTurnInf();
   setGameActionBtns(true);
+  startTimers();
+  if(mode==='ai' && turn===2) setTimeout(runAI, 400);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -718,15 +760,44 @@ function startMode(m){
     getSocket();
     return;
   }
+  if(m==='ai'){
+    document.getElementById('menu').classList.add('hidden');
+    document.getElementById('ai-setup').classList.remove('hidden');
+    return;
+  }
+  showGame();
+}
+
+let aiConfig = { diff: 1, time: 0, start: 'user' };
+
+function selectSetupOpt(category, value, el) {
+  aiConfig[category] = value;
+  document.querySelectorAll('.' + category + '-opt').forEach(btn => btn.classList.remove('active'));
+  el.classList.add('active');
+  snd('click');
+}
+
+function launchAIGame() {
+  snd('click');
+  diff = aiConfig.diff;
+  // Show difficulty on the opponent card
+  const diffLabels = {1:'😊 Débutant', 2:'🧠 Intermédiaire', 3:'🔥 Expert', 4:'👑 Maître'};
+  const diffTag = document.getElementById('diff-tag');
+  if(diffTag){ diffTag.textContent = diffLabels[diff] || ''; diffTag.style.display = ''; }
+  document.getElementById('ai-setup').classList.add('hidden');
   showGame();
 }
 
 function backToMenu(){
   hidePauseBanner(); clearSession();
+  stopTimers();
+  const diffTag = document.getElementById('diff-tag');
+  if(diffTag) { diffTag.textContent=''; diffTag.style.display='none'; }
   Animations.hideEndModal();
   if(socket&&roomCode){socket.emit('leave');roomCode=null;}
   document.getElementById('game').classList.add('hidden');
   document.getElementById('lobby').classList.add('hidden');
+  document.getElementById('ai-setup').classList.add('hidden');
   document.getElementById('menu').classList.remove('hidden');
   over=true; busy=false;
   setNetIndicator('ok');
