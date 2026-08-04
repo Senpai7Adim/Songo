@@ -1,0 +1,394 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — buttons.css
+   Complete button system: Primary, Secondary, Outline, Ghost,
+   Danger, Disabled, Loading, Icon, Fab + all states.
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   BASE BUTTON RESET & SHARED PROPERTIES
+   ────────────────────────────────────────────────────────────────── */
+.btn {
+  /* Layout */
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             var(--space-2);
+
+  /* Sizing */
+  padding:         10px 20px;
+  min-height:      42px;
+  border-radius:   var(--radius-md);
+
+  /* Typography */
+  font-family:     var(--font-body);
+  font-size:       0.875rem;
+  font-weight:     600;
+  letter-spacing:  0.02em;
+  line-height:     1;
+  white-space:     nowrap;
+
+  /* Theming */
+  background:      var(--bg-secondary);
+  color:           var(--text-primary);
+  border:          1px solid var(--border-primary);
+
+  /* Interaction */
+  cursor:          pointer;
+  user-select:     none;
+  -webkit-tap-highlight-color: transparent;
+  text-decoration: none;
+
+  /* Motion */
+  transition:
+    background      var(--duration-fast) var(--ease-ui),
+    border-color    var(--duration-fast) var(--ease-ui),
+    color           var(--duration-fast) var(--ease-ui),
+    box-shadow      var(--duration-fast) var(--ease-ui),
+    transform       var(--duration-fast) var(--ease-ui),
+    opacity         var(--duration-fast) var(--ease-ui);
+
+  position: relative;
+  overflow: hidden;
+}
+
+/* Ripple inner pseudo element */
+.btn::after {
+  content:          '';
+  position:         absolute;
+  inset:            0;
+  background:       radial-gradient(circle at center, rgba(255,255,255,0.15), transparent 70%);
+  opacity:          0;
+  transition:       opacity var(--duration-fast) var(--ease-ui);
+  border-radius:    inherit;
+  pointer-events:   none;
+}
+.btn:hover::after { opacity: 1; }
+
+/* Focus ring — accessibility */
+.btn:focus-visible {
+  outline:        2px solid var(--color-gold-500);
+  outline-offset: 3px;
+}
+
+/* Active / pressed state */
+.btn:active:not(:disabled):not(.btn--loading) {
+  transform:   translateY(1px) scale(0.98);
+  box-shadow:  none;
+  transition-duration: 60ms;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   SIZE VARIANTS
+   ────────────────────────────────────────────────────────────────── */
+.btn--sm {
+  padding:      6px 14px;
+  min-height:   32px;
+  font-size:    0.8125rem;
+  border-radius: var(--radius-sm);
+  gap:          var(--space-1);
+}
+.btn--lg {
+  padding:      14px 28px;
+  min-height:   52px;
+  font-size:    1rem;
+  border-radius: var(--radius-lg);
+  gap:          var(--space-3);
+}
+.btn--xl {
+  padding:      18px 40px;
+  min-height:   60px;
+  font-size:    1.0625rem;
+  border-radius: var(--radius-xl);
+  gap:          var(--space-3);
+}
+.btn--full { width: 100%; }
+
+/* ──────────────────────────────────────────────────────────────────
+   PRIMARY — Gold gradient, dark text. Main CTA.
+   ────────────────────────────────────────────────────────────────── */
+.btn--primary {
+  background:  linear-gradient(135deg, var(--color-gold-500) 0%, var(--color-gold-600) 100%);
+  color:       var(--color-ebony-950);
+  border:      none;
+  box-shadow:  0 2px 8px rgba(200, 146, 42, 0.25);
+}
+.btn--primary:hover:not(:disabled) {
+  background:  linear-gradient(135deg, var(--color-gold-300) 0%, var(--color-gold-500) 100%);
+  transform:   translateY(-2px);
+  box-shadow:  0 6px 22px rgba(200, 146, 42, 0.45);
+}
+/* Legacy alias */
+.primary-btn { @extend .btn; }
+
+/* ──────────────────────────────────────────────────────────────────
+   SECONDARY — Card background, gold border. Subdued CTA.
+   ────────────────────────────────────────────────────────────────── */
+.btn--secondary {
+  background:  var(--bg-card);
+  color:       var(--text-primary);
+  border-color: var(--border-primary);
+  backdrop-filter: blur(8px);
+}
+.btn--secondary:hover:not(:disabled) {
+  background:   rgba(200, 146, 42, 0.12);
+  border-color: var(--color-gold-500);
+  transform:    translateY(-1px);
+  box-shadow:   0 4px 16px rgba(200, 146, 42, 0.18);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   OUTLINE — Transparent bg, gold border.
+   ────────────────────────────────────────────────────────────────── */
+.btn--outline {
+  background:  transparent;
+  color:       var(--color-gold-200);
+  border-color: var(--color-gold-500);
+}
+.btn--outline:hover:not(:disabled) {
+  background:   rgba(200, 146, 42, 0.14);
+  border-color: var(--color-gold-300);
+  transform:    translateY(-1px);
+  box-shadow:   0 4px 14px rgba(200, 146, 42, 0.20);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   GHOST — No bg, no border. Minimal presence.
+   ────────────────────────────────────────────────────────────────── */
+.btn--ghost,
+.ghost-btn {
+  background:  transparent;
+  color:       var(--text-secondary);
+  border-color: var(--border-subtle);
+}
+.btn--ghost:hover:not(:disabled),
+.ghost-btn:hover:not(:disabled) {
+  background:   var(--ash);
+  color:        var(--text-primary);
+  border-color: var(--border-primary);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   DANGER — Destructive actions (resign, delete, leave).
+   ────────────────────────────────────────────────────────────────── */
+.btn--danger,
+.danger-btn {
+  background:   rgba(192, 82, 42, 0.12);
+  color:        var(--color-terracotta-300);
+  border-color: rgba(192, 82, 42, 0.40);
+}
+.btn--danger:hover:not(:disabled),
+.danger-btn:hover:not(:disabled) {
+  background:   rgba(192, 82, 42, 0.22);
+  border-color: var(--color-terracotta-500);
+  transform:    translateY(-1px);
+  box-shadow:   0 4px 16px rgba(192, 82, 42, 0.22);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   SUCCESS — Confirm, accept actions.
+   ────────────────────────────────────────────────────────────────── */
+.btn--success {
+  background:   rgba(80, 210, 138, 0.14);
+  color:        var(--color-emerald-400);
+  border-color: rgba(80, 210, 138, 0.35);
+}
+.btn--success:hover:not(:disabled) {
+  background:   rgba(80, 210, 138, 0.24);
+  border-color: var(--color-emerald-400);
+  transform:    translateY(-1px);
+  box-shadow:   0 4px 16px rgba(80, 210, 138, 0.22);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   DISABLED STATE
+   ────────────────────────────────────────────────────────────────── */
+.btn:disabled,
+.btn--disabled {
+  opacity:        0.40;
+  cursor:         not-allowed;
+  pointer-events: none;
+  transform:      none !important;
+  box-shadow:     none !important;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   LOADING STATE — shows spinner, disables interaction
+   ────────────────────────────────────────────────────────────────── */
+.btn--loading {
+  cursor:         wait;
+  pointer-events: none;
+  color:          transparent;    /* hide label while loading */
+}
+.btn--loading::before {
+  content:          '';
+  position:         absolute;
+  width:            18px;
+  height:           18px;
+  border:           2.5px solid currentColor;
+  border-top-color: transparent;
+  border-radius:    50%;
+  animation:        btn-spin 0.7s linear infinite;
+  color:            rgba(13, 10, 5, 0.8); /* inherits from btn color context */
+}
+.btn--primary.btn--loading::before  { color: rgba(13, 10, 5, 0.7); }
+.btn--outline.btn--loading::before,
+.btn--ghost.btn--loading::before    { color: var(--color-gold-300); }
+.btn--danger.btn--loading::before   { color: var(--color-terracotta-300); }
+
+@keyframes btn-spin {
+  to { transform: rotate(360deg); }
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   ICON BUTTON — square, no label
+   ────────────────────────────────────────────────────────────────── */
+.btn--icon,
+.icon-btn {
+  background:     none;
+  border:         none;
+  padding:        var(--space-2);
+  min-height:     unset;
+  border-radius:  var(--radius-sm);
+  color:          var(--text-secondary);
+  font-size:      1.1rem;
+  width:          36px;
+  height:         36px;
+}
+.btn--icon:hover:not(:disabled),
+.icon-btn:hover {
+  color:       var(--color-gold-500);
+  background:  rgba(200, 146, 42, 0.10);
+  transform:   scale(1.08);
+  box-shadow:  none;
+}
+.btn--icon::after,
+.icon-btn::after { display: none; } /* no ripple on icon buttons */
+
+/* Icon button with border */
+.btn--icon-border {
+  border: 1px solid var(--border-primary);
+  background: var(--bg-card);
+  backdrop-filter: blur(8px);
+}
+.btn--icon-border:hover:not(:disabled) {
+  border-color: var(--color-gold-500);
+  background:   rgba(200, 146, 42, 0.08);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   FAB — Floating Action Button
+   ────────────────────────────────────────────────────────────────── */
+.btn--fab {
+  position:      fixed;
+  bottom:        var(--space-6);
+  right:         var(--space-6);
+  width:         56px;
+  height:        56px;
+  border-radius: var(--radius-full);
+  padding:       0;
+  font-size:     1.4rem;
+  background:    linear-gradient(135deg, var(--color-gold-500), var(--color-gold-600));
+  color:         var(--color-ebony-950);
+  border:        none;
+  box-shadow:    var(--shadow-float);
+  z-index:       var(--z-raised);
+}
+.btn--fab:hover:not(:disabled) {
+  transform:   translateY(-3px) scale(1.05);
+  box-shadow:  var(--shadow-float), 0 0 24px rgba(200, 146, 42, 0.40);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   MODE BUTTON — Large list button (game mode selector)
+   ────────────────────────────────────────────────────────────────── */
+.mode-btn {
+  display:        flex;
+  align-items:    center;
+  width:          100%;
+  padding:        18px;
+  margin:         10px 0;
+  border:         1px solid var(--border-primary);
+  border-radius:  var(--radius-lg);
+  background:     var(--bg-secondary);
+  color:          var(--text-primary);
+  text-align:     left;
+  cursor:         pointer;
+  gap:            16px;
+  font-family:    var(--font-body);
+  transition:     all var(--duration-mid) var(--ease-ui);
+  position:       relative;
+  overflow:       hidden;
+}
+.mode-btn::before {
+  content:    '';
+  position:   absolute;
+  inset:      0;
+  background: linear-gradient(90deg, rgba(200, 146, 42, 0.08), transparent);
+  opacity:    0;
+  transition: opacity var(--duration-mid);
+}
+.mode-btn:hover { border-color: var(--color-gold-500); transform: translateX(5px); box-shadow: var(--shadow-md); }
+.mode-btn:hover::before { opacity: 1; }
+.mode-btn:active { transform: translateX(2px); }
+.mode-btn:focus-visible { outline: 2px solid var(--color-gold-500); outline-offset: 2px; }
+
+.mode-icon {
+  font-size:    1.75rem;
+  flex-shrink:  0;
+  width:        48px;
+  height:       48px;
+  display:      flex;
+  align-items:  center;
+  justify-content: center;
+  background:   var(--ash);
+  border-radius: var(--radius-sm);
+  border:       1px solid var(--border-subtle);
+}
+.mode-text  { display: flex; flex-direction: column; }
+.mode-title { font-weight: 700; font-size: 1.05rem; }
+.mode-btn .desc { font-size: 0.8rem; color: var(--text-secondary); margin-top: 3px; }
+
+/* ──────────────────────────────────────────────────────────────────
+   BUTTON GROUP
+   ────────────────────────────────────────────────────────────────── */
+.btn-group {
+  display:   inline-flex;
+  align-items: stretch;
+}
+.btn-group .btn {
+  border-radius: 0;
+  border-right-width: 0;
+}
+.btn-group .btn:first-child { border-radius: var(--radius-md) 0 0 var(--radius-md); }
+.btn-group .btn:last-child  { border-radius: 0 var(--radius-md) var(--radius-md) 0; border-right-width: 1px; }
+.btn-group .btn:only-child  { border-radius: var(--radius-md); border-right-width: 1px; }
+
+/* ──────────────────────────────────────────────────────────────────
+   PILL / FILTER BUTTONS (difficulty, chip toggle)
+   ────────────────────────────────────────────────────────────────── */
+.btn--pill,
+.db {
+  padding:       7px 16px;
+  border:        1px solid var(--border-primary);
+  border-radius: var(--radius-full);
+  background:    transparent;
+  color:         var(--text-secondary);
+  font-size:     0.83rem;
+  font-family:   var(--font-body);
+  cursor:        pointer;
+  transition:    all var(--duration-fast) var(--ease-ui);
+  font-weight:   500;
+}
+.btn--pill:hover:not(:disabled),
+.db:hover { border-color: var(--color-gold-500); color: var(--text-primary); }
+.btn--pill.active,
+.db.on {
+  background:  linear-gradient(135deg, var(--color-gold-500) 0%, var(--color-gold-600) 100%);
+  color:       var(--color-ebony-950);
+  border-color: transparent;
+  font-weight: 700;
+  box-shadow:  0 2px 10px rgba(200, 146, 42, 0.30);
+}
+.btn--pill:focus-visible,
+.db:focus-visible { outline: 2px solid var(--color-gold-500); outline-offset: 2px; }

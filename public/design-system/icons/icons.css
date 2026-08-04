@@ -1,0 +1,130 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — icons/icons.css
+   Lucide icon library integration + icon utility classes
+   CDN: https://unpkg.com/lucide@latest
+   Usage: <i data-lucide="icon-name" class="icon icon-md"></i>
+          Then call: lucide.createIcons()
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   BASE ICON — applies to Lucide SVG output
+   ────────────────────────────────────────────────────────────────── */
+.icon,
+[data-lucide],
+.icon svg {
+  display:      inline-block;
+  flex-shrink:  0;
+  vertical-align: middle;
+  stroke:       currentColor;
+  stroke-width: 1.75;
+  stroke-linecap:  round;
+  stroke-linejoin: round;
+  fill:         none;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   SIZE SCALE
+   ────────────────────────────────────────────────────────────────── */
+.icon-xs  { width: 12px; height: 12px; }
+.icon-sm  { width: 16px; height: 16px; }
+.icon-md  { width: 20px; height: 20px; }   /* default */
+.icon-lg  { width: 24px; height: 24px; }
+.icon-xl  { width: 32px; height: 32px; }
+.icon-2xl { width: 40px; height: 40px; }
+.icon-3xl { width: 48px; height: 48px; }
+
+/* ──────────────────────────────────────────────────────────────────
+   STROKE WEIGHT
+   ────────────────────────────────────────────────────────────────── */
+.icon-thin     { stroke-width: 1.25; }
+.icon-regular  { stroke-width: 1.75; }
+.icon-bold     { stroke-width: 2.25; }
+.icon-bolder   { stroke-width: 2.75; }
+
+/* ──────────────────────────────────────────────────────────────────
+   COLOR UTILITIES
+   ────────────────────────────────────────────────────────────────── */
+.icon-primary   { color: var(--text-primary); }
+.icon-secondary { color: var(--text-secondary); }
+.icon-muted     { color: var(--text-muted); }
+.icon-gold      { color: var(--color-gold-500); }
+.icon-gold-lt   { color: var(--color-gold-200); }
+.icon-success   { color: var(--color-success-text); }
+.icon-warning   { color: var(--color-warning-text); }
+.icon-error     { color: var(--color-error-text); }
+.icon-info      { color: var(--color-info-text); }
+.icon-sapphire  { color: var(--color-sapphire-300); }
+.icon-emerald   { color: var(--color-emerald-400); }
+.icon-ivory     { color: var(--color-ivory-100); }
+
+/* ──────────────────────────────────────────────────────────────────
+   ICON IN BUTTONS / INPUTS
+   ────────────────────────────────────────────────────────────────── */
+.btn .icon,
+.btn [data-lucide] { pointer-events: none; }
+
+/* Icon-only button sizing helper */
+.btn--icon .icon-md  { width: 18px; height: 18px; }
+.btn--icon .icon-lg  { width: 22px; height: 22px; }
+
+/* ──────────────────────────────────────────────────────────────────
+   ICON CONTAINERS — background pill / box
+   ────────────────────────────────────────────────────────────────── */
+.icon-box {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  border-radius:   var(--radius-sm);
+  background:      var(--ash);
+  border:          1px solid var(--border-subtle);
+  flex-shrink:     0;
+}
+.icon-box-sm  { width: 28px; height: 28px; }
+.icon-box-md  { width: 36px; height: 36px; }
+.icon-box-lg  { width: 44px; height: 44px; }
+.icon-box-xl  { width: 56px; height: 56px; }
+
+.icon-box--gold    { background: rgba(200,146,42,0.15); border-color: rgba(200,146,42,0.30); }
+.icon-box--emerald { background: rgba(80,210,138,0.12); border-color: rgba(80,210,138,0.25); }
+.icon-box--sapphire { background: rgba(136,187,255,0.10); border-color: rgba(136,187,255,0.22); }
+.icon-box--error   { background: rgba(192,82,42,0.12);  border-color: rgba(192,82,42,0.28);  }
+
+.icon-box--circle { border-radius: 50%; }
+
+/* ──────────────────────────────────────────────────────────────────
+   ANIMATED ICONS
+   ────────────────────────────────────────────────────────────────── */
+.icon--spin    { animation: spin 1.2s linear infinite; }
+.icon--pulse   { animation: pulse 1.4s ease-in-out infinite; }
+.icon--bounce  {
+  animation:         bounce 0.6s var(--ease-bounce) infinite alternate;
+}
+@keyframes bounce {
+  from { transform: translateY(0); }
+  to   { transform: translateY(-4px); }
+}
+.icon--ping {
+  animation: reconnect-ping 1.5s ease-in-out infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   LUCIDE CDN SCRIPT TAG (reference — paste in <head>)
+   ────────────────────────────────────────────────────────────────── */
+/*
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+  <script>lucide.createIcons();</script>
+
+  Common icon names used in Songo:
+  - menu, x, settings, sun, moon
+  - user, users, wifi, wifi-off, signal
+  - clock, timer, zap, trophy
+  - swords, shield, flag, rotate-ccw
+  - check, check-circle, x-circle, alert-circle, info
+  - copy, share, link, external-link
+  - chevron-down, chevron-right, chevron-left
+  - arrow-left, arrow-right, home, log-out
+  - star, heart, message-circle, bell, bell-off
+  - search, filter, sliders
+  - play, pause, skip-forward
+  - globe, map-pin
+*/

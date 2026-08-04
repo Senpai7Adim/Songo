@@ -1,0 +1,170 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — components/timer.css
+   Standalone game timer component with urgency states
+   Requires: variables.css, animations.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   INLINE TIMER (inside player card)
+   ────────────────────────────────────────────────────────────────── */
+.timer {
+  font-variant-numeric: tabular-nums;
+  font-weight:   500;
+  font-size:     0.9rem;
+  color:         var(--text-secondary);
+  letter-spacing: 0.05em;
+  line-height:   1;
+}
+.timer.low {
+  color:     var(--color-terracotta-300);
+  animation: timer-pulse 0.8s ease infinite;
+}
+.timer.critical {
+  color:     #FF4444;
+  animation: timer-pulse 0.5s ease infinite;
+  font-weight: 700;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CLOCK TIMER — large standalone display
+   ────────────────────────────────────────────────────────────────── */
+.clock {
+  display:         flex;
+  flex-direction:  column;
+  align-items:     center;
+  gap:             var(--space-1);
+  padding:         var(--space-3) var(--space-5);
+  background:      var(--bg-card);
+  border:          1px solid var(--border-primary);
+  border-radius:   var(--radius-lg);
+  transition:
+    border-color var(--duration-mid) var(--ease-ui),
+    background   var(--duration-mid) var(--ease-ui),
+    box-shadow   var(--duration-mid) var(--ease-ui);
+}
+.clock.active {
+  border-color: var(--color-gold-500);
+  background:   rgba(200,146,42,0.06);
+  box-shadow:   0 0 16px rgba(200,146,42,0.15);
+}
+.clock.low {
+  border-color: var(--color-terracotta-500);
+  background:   rgba(192,82,42,0.06);
+  box-shadow:   0 0 16px rgba(192,82,42,0.15);
+}
+
+.clock-display {
+  font-family:          var(--font-body);
+  font-size:            clamp(1.5rem, 5vw, 2.25rem);
+  font-weight:          700;
+  font-variant-numeric: tabular-nums;
+  letter-spacing:       0.06em;
+  line-height:          1;
+  color:                var(--text-primary);
+  transition:           color var(--duration-mid);
+}
+.clock.active   .clock-display { color: var(--color-gold-200); }
+.clock.low      .clock-display { color: var(--color-terracotta-300); animation: timer-pulse 0.8s ease infinite; }
+.clock.critical .clock-display { color: #FF4444;                     animation: timer-pulse 0.5s ease infinite; }
+
+.clock-label {
+  font-size:      0.6875rem;
+  font-weight:    600;
+  text-transform: uppercase;
+  letter-spacing: 0.12em;
+  color:          var(--text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   COUNTDOWN DISPLAY — big pre-game countdown
+   ────────────────────────────────────────────────────────────────── */
+.countdown-display {
+  font-family:  var(--font-display);
+  font-size:    clamp(5rem, 20vw, 9rem);
+  font-weight:  700;
+  color:        var(--color-gold-200);
+  text-shadow:  0 0 60px rgba(245,208,138,0.5), 0 4px 8px rgba(0,0,0,0.8);
+  animation:    countdown-pop 950ms var(--ease-spring) forwards;
+  text-align:   center;
+  line-height:  1;
+  font-variant-numeric: tabular-nums;
+}
+.countdown-display.go {
+  color:       var(--color-emerald-400);
+  text-shadow: 0 0 60px rgba(80,210,138,0.5), 0 4px 8px rgba(0,0,0,0.8);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   DELAY / RECONNECT COUNTDOWN
+   ────────────────────────────────────────────────────────────────── */
+.countdown-chip {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             var(--space-2);
+  padding:         var(--space-2) var(--space-4);
+  background:      rgba(200, 146, 42, 0.12);
+  border:          1px solid rgba(200, 146, 42, 0.35);
+  border-radius:   var(--radius-full);
+  font-size:       0.875rem;
+  font-weight:     600;
+  color:           var(--color-gold-200);
+  font-variant-numeric: tabular-nums;
+}
+.countdown-chip .countdown-val {
+  font-size:   1.1rem;
+  font-weight: 800;
+  color:       var(--color-gold-500);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   MOVE HISTORY TIMER ENTRY
+   ────────────────────────────────────────────────────────────────── */
+.move-entry {
+  display:       flex;
+  justify-content: space-between;
+  align-items:   center;
+  padding:       8px 12px;
+  background:    var(--bg-secondary);
+  border-radius: var(--radius-sm);
+  font-size:     0.82rem;
+  border-left:   3px solid transparent;
+  animation:     entry-in 200ms var(--ease-out);
+}
+.move-entry.p1 { border-left-color: var(--color-gold-500); }
+.move-entry.p2 { border-left-color: var(--color-sapphire-300); }
+.m-info        { display: flex; gap: 6px; color: var(--text-secondary); }
+.m-time        { font-size: 0.72rem; color: var(--text-muted); font-variant-numeric: tabular-nums; }
+
+/* ──────────────────────────────────────────────────────────────────
+   INFOBAR — turn status indicator (bottom of board)
+   ────────────────────────────────────────────────────────────────── */
+.infobar-wrapper {
+  position:        relative;
+  width:           100%;
+  display:         flex;
+  justify-content: center;
+  margin-top:      0.875rem;
+}
+.infobar {
+  background:      var(--bg-card);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border:          1px solid var(--border-primary);
+  border-radius:   var(--radius-full);
+  padding:         10px 22px;
+  font-weight:     500;
+  font-size:       0.88rem;
+  display:         flex;
+  align-items:     center;
+  gap:             var(--space-2);
+  box-shadow:      var(--shadow-sm), inset 0 1px 0 rgba(245,236,215,0.05);
+  max-width:       400px;
+  text-align:      center;
+  justify-content: center;
+  transition:      border-color var(--duration-mid), box-shadow var(--duration-mid);
+}
+.sd {
+  width:         9px; height: 9px;
+  border-radius: 50%;
+  flex-shrink:   0;
+}

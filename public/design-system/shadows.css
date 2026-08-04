@@ -1,0 +1,65 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — shadows.css
+   Shadow utility classes and component shadow patterns.
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   UTILITY CLASSES
+   ────────────────────────────────────────────────────────────────── */
+.shadow-none    { box-shadow: none; }
+.shadow-xs      { box-shadow: var(--shadow-xs); }
+.shadow-sm      { box-shadow: var(--shadow-sm); }
+.shadow-md      { box-shadow: var(--shadow-md); }
+.shadow-lg      { box-shadow: var(--shadow-lg); }
+.shadow-float   { box-shadow: var(--shadow-float); }
+.shadow-inner   { box-shadow: var(--shadow-inner); }
+.shadow-gold    { box-shadow: var(--shadow-gold); }
+.shadow-sap     { box-shadow: var(--shadow-sapphire); }
+.shadow-emerald { box-shadow: var(--shadow-emerald); }
+
+/* ──────────────────────────────────────────────────────────────────
+   GLOW EFFECTS — for interactive / status states
+   ────────────────────────────────────────────────────────────────── */
+.glow-gold {
+  box-shadow:
+    0 0 0 1px rgba(200, 146, 42, 0.40),
+    0 0 24px rgba(200, 146, 42, 0.30),
+    0 8px 32px rgba(0, 0, 0, 0.40);
+}
+.glow-emerald {
+  box-shadow:
+    0 0 0 1px rgba(80, 210, 138, 0.40),
+    0 0 24px rgba(80, 210, 138, 0.28),
+    0 8px 32px rgba(0, 0, 0, 0.40);
+}
+.glow-sapphire {
+  box-shadow:
+    0 0 0 1px rgba(136, 187, 255, 0.35),
+    0 0 24px rgba(58, 95, 138, 0.30),
+    0 8px 32px rgba(0, 0, 0, 0.40);
+}
+.glow-danger {
+  box-shadow:
+    0 0 0 1px rgba(192, 82, 42, 0.45),
+    0 0 20px rgba(192, 82, 42, 0.25),
+    0 8px 32px rgba(0, 0, 0, 0.40);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TEXT SHADOW UTILITIES
+   ────────────────────────────────────────────────────────────────── */
+.text-shadow-sm  { text-shadow: 0 1px 4px rgba(0, 0, 0, 0.70); }
+.text-shadow-md  { text-shadow: 0 2px 8px rgba(0, 0, 0, 0.80); }
+.text-shadow-glow-gold {
+  text-shadow: 0 0 40px rgba(245, 208, 138, 0.55), 0 4px 8px rgba(0, 0, 0, 0.80);
+}
+.text-shadow-none { text-shadow: none; }
+
+/* ──────────────────────────────────────────────────────────────────
+   DROP SHADOW (filter) — for SVG / non-box-shadow usage
+   ────────────────────────────────────────────────────────────────── */
+.drop-shadow-sm  { filter: drop-shadow(0 1px 3px rgba(0, 0, 0, 0.35)); }
+.drop-shadow-md  { filter: drop-shadow(0 3px 8px rgba(0, 0, 0, 0.45)); }
+.drop-shadow-lg  { filter: drop-shadow(0 8px 24px rgba(0, 0, 0, 0.60)); }
+.drop-shadow-gold { filter: drop-shadow(0 0 10px rgba(200, 146, 42, 0.50)); }

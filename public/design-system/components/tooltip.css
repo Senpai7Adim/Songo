@@ -1,0 +1,168 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — components/tooltip.css
+   CSS-only tooltip with 4 positions: top, bottom, left, right
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   TOOLTIP BASE
+   Usage: <button class="tooltip" data-tip="Your text">…</button>
+   ────────────────────────────────────────────────────────────────── */
+.tooltip {
+  position: relative;
+}
+
+/* Tooltip bubble */
+.tooltip::before {
+  content:         attr(data-tip);
+  position:        absolute;
+  bottom:          calc(100% + 10px);
+  left:            50%;
+  transform:       translateX(-50%) translateY(4px);
+  background:      var(--bg-overlay);
+  color:           var(--text-primary);
+  padding:         6px 12px;
+  border-radius:   var(--radius-sm);
+  font-size:       0.75rem;
+  font-weight:     500;
+  line-height:     1.4;
+  white-space:     nowrap;
+  max-width:       220px;
+  text-align:      center;
+  border:          1px solid var(--border-primary);
+  box-shadow:      var(--shadow-md);
+  backdrop-filter: blur(12px);
+  pointer-events:  none;
+  opacity:         0;
+  transition:
+    opacity   var(--duration-fast) var(--ease-ui),
+    transform var(--duration-fast) var(--ease-ui);
+  z-index:         var(--z-tooltip);
+  font-family:     var(--font-body);
+}
+
+/* Tooltip arrow */
+.tooltip::after {
+  content:        '';
+  position:       absolute;
+  bottom:         calc(100% + 4px);
+  left:           50%;
+  transform:      translateX(-50%) translateY(4px);
+  border:         5px solid transparent;
+  border-top-color: var(--bg-overlay);
+  pointer-events: none;
+  opacity:        0;
+  transition:
+    opacity   var(--duration-fast) var(--ease-ui),
+    transform var(--duration-fast) var(--ease-ui);
+  z-index:        var(--z-tooltip);
+}
+
+/* Show on hover / focus */
+.tooltip:hover::before,
+.tooltip:focus-visible::before { opacity: 1; transform: translateX(-50%) translateY(0); }
+.tooltip:hover::after,
+.tooltip:focus-visible::after  { opacity: 1; transform: translateX(-50%) translateY(0); }
+
+/* ──────────────────────────────────────────────────────────────────
+   POSITION VARIANTS
+   ────────────────────────────────────────────────────────────────── */
+
+/* Bottom */
+.tooltip--bottom::before {
+  bottom:    auto;
+  top:       calc(100% + 10px);
+  transform: translateX(-50%) translateY(-4px);
+}
+.tooltip--bottom::after {
+  bottom:            auto;
+  top:               calc(100% + 4px);
+  border-top-color:  transparent;
+  border-bottom-color: var(--bg-overlay);
+  transform:         translateX(-50%) translateY(-4px);
+}
+.tooltip--bottom:hover::before,
+.tooltip--bottom:focus-visible::before { transform: translateX(-50%) translateY(0); }
+.tooltip--bottom:hover::after,
+.tooltip--bottom:focus-visible::after  { transform: translateX(-50%) translateY(0); }
+
+/* Left */
+.tooltip--left::before {
+  bottom:    auto;
+  top:       50%;
+  left:      auto;
+  right:     calc(100% + 10px);
+  transform: translateY(-50%) translateX(4px);
+}
+.tooltip--left::after {
+  bottom:             auto;
+  top:                50%;
+  left:               auto;
+  right:              calc(100% + 4px);
+  border-top-color:   transparent;
+  border-left-color:  var(--bg-overlay);
+  transform:          translateY(-50%) translateX(4px);
+}
+.tooltip--left:hover::before,
+.tooltip--left:focus-visible::before { transform: translateY(-50%) translateX(0); }
+.tooltip--left:hover::after,
+.tooltip--left:focus-visible::after  { transform: translateY(-50%) translateX(0); }
+
+/* Right */
+.tooltip--right::before {
+  bottom:    auto;
+  top:       50%;
+  left:      calc(100% + 10px);
+  transform: translateY(-50%) translateX(-4px);
+}
+.tooltip--right::after {
+  bottom:              auto;
+  top:                 50%;
+  left:                calc(100% + 4px);
+  border-top-color:    transparent;
+  border-right-color:  var(--bg-overlay);
+  transform:           translateY(-50%) translateX(-4px);
+}
+.tooltip--right:hover::before,
+.tooltip--right:focus-visible::before { transform: translateY(-50%) translateX(0); }
+.tooltip--right:hover::after,
+.tooltip--right:focus-visible::after  { transform: translateY(-50%) translateX(0); }
+
+/* ──────────────────────────────────────────────────────────────────
+   COLOR VARIANTS
+   ────────────────────────────────────────────────────────────────── */
+.tooltip--gold::before  { border-color: var(--color-gold-500); }
+.tooltip--gold::before  { background: rgba(200,146,42,0.92); color: var(--color-ebony-950); }
+.tooltip--gold::after   { border-top-color: rgba(200,146,42,0.92); }
+
+.tooltip--error::before { background: rgba(192,82,42,0.92); color: var(--color-ivory-100); }
+.tooltip--error::after  { border-top-color: rgba(192,82,42,0.92); }
+
+/* ──────────────────────────────────────────────────────────────────
+   RICH TOOLTIP (JS-powered, positioned via JS)
+   Use when content is complex (multi-line, with icon, etc.)
+   ────────────────────────────────────────────────────────────────── */
+.tooltip-rich {
+  position:        absolute;
+  background:      var(--bg-card);
+  backdrop-filter: blur(16px);
+  border:          1px solid var(--border-primary);
+  border-radius:   var(--radius-md);
+  padding:         var(--space-3) var(--space-4);
+  box-shadow:      var(--shadow-lg);
+  max-width:       280px;
+  z-index:         var(--z-tooltip);
+  pointer-events:  none;
+  animation:       fade-in var(--duration-fast) var(--ease-out);
+}
+.tooltip-rich-title {
+  font-size:   0.875rem;
+  font-weight: 600;
+  color:       var(--text-primary);
+  margin-bottom: var(--space-1);
+}
+.tooltip-rich-body {
+  font-size: 0.75rem;
+  color:     var(--text-secondary);
+  line-height: 1.5;
+}

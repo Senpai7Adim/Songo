@@ -1,0 +1,172 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — components/progress.css
+   Progress bar with animated fill, variants, and game timer
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   PROGRESS BAR — horizontal
+   ────────────────────────────────────────────────────────────────── */
+.progress {
+  width:         100%;
+  height:        6px;
+  background:    var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow:      hidden;
+  position:      relative;
+}
+.progress-bar {
+  height:        100%;
+  border-radius: var(--radius-full);
+  background:    linear-gradient(90deg, var(--color-gold-500), var(--color-gold-300));
+  transition:    width var(--duration-slow) var(--ease-ui);
+  position:      relative;
+  min-width:     4px;
+}
+
+/* Shimmer effect on fill */
+.progress-bar::after {
+  content:      '';
+  position:     absolute;
+  inset:        0;
+  background:   linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  background-size: 200% 100%;
+  animation:    skeleton-wave 2s ease-in-out infinite;
+}
+
+/* ── Size variants ── */
+.progress--xs { height: 3px; }
+.progress--sm { height: 4px; }
+.progress--md { height: 8px; }
+.progress--lg { height: 12px; }
+.progress--xl { height: 16px; }
+
+/* ── Color variants ── */
+.progress-bar--gold    { background: linear-gradient(90deg, var(--color-gold-600), var(--color-gold-300)); }
+.progress-bar--success { background: linear-gradient(90deg, var(--color-emerald-600), var(--color-emerald-400)); }
+.progress-bar--warning { background: linear-gradient(90deg, var(--color-gold-700), var(--color-gold-500)); }
+.progress-bar--error   { background: linear-gradient(90deg, var(--color-terracotta-600), var(--color-terracotta-300)); }
+.progress-bar--sapphire { background: linear-gradient(90deg, var(--color-sapphire-700), var(--color-sapphire-300)); }
+
+/* ── Striped variant ── */
+.progress-bar--striped {
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 8px,
+    rgba(255,255,255,0.12) 8px,
+    rgba(255,255,255,0.12) 16px
+  );
+  background-size: 32px 100%;
+}
+
+/* ── Indeterminate (unknown duration) ── */
+.progress-bar--indeterminate {
+  width:     45% !important;
+  animation: progress-indeterminate 1.4s ease-in-out infinite;
+}
+@keyframes progress-indeterminate {
+  0%   { transform: translateX(-100%); }
+  100% { transform: translateX(280%); }
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   PROGRESS WITH LABEL
+   ────────────────────────────────────────────────────────────────── */
+.progress-group {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+}
+.progress-header {
+  display:         flex;
+  justify-content: space-between;
+  align-items:     baseline;
+}
+.progress-label {
+  font-size:   0.8125rem;
+  font-weight: 500;
+  color:       var(--text-secondary);
+}
+.progress-value {
+  font-size:   0.8125rem;
+  font-weight: 700;
+  color:       var(--color-gold-200);
+  font-variant-numeric: tabular-nums;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CIRCULAR PROGRESS — SVG-based
+   ────────────────────────────────────────────────────────────────── */
+.progress-circle {
+  position:    relative;
+  display:     inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+.progress-circle svg { transform: rotate(-90deg); }
+.progress-circle-track { fill: none; stroke: var(--bg-secondary); }
+.progress-circle-fill  {
+  fill:                 none;
+  stroke:               var(--color-gold-500);
+  stroke-linecap:       round;
+  transition:           stroke-dashoffset var(--duration-slow) var(--ease-ui);
+}
+.progress-circle-label {
+  position:       absolute;
+  inset:          0;
+  display:        flex;
+  flex-direction: column;
+  align-items:    center;
+  justify-content: center;
+  font-variant-numeric: tabular-nums;
+}
+.progress-circle-value {
+  font-size:   1.25rem;
+  font-weight: 700;
+  color:       var(--text-primary);
+  line-height: 1;
+}
+.progress-circle-sub {
+  font-size: 0.6875rem;
+  color:     var(--text-muted);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   GAME TIMER BAR — time remaining indicator below player card
+   ────────────────────────────────────────────────────────────────── */
+.timer-bar {
+  width:         100%;
+  height:        3px;
+  background:    var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow:      hidden;
+  margin-top:    6px;
+}
+.timer-bar-fill {
+  height:        100%;
+  border-radius: var(--radius-full);
+  background:    linear-gradient(90deg, var(--color-gold-500), var(--color-gold-300));
+  transition:    width 1s linear, background 1s;
+}
+/* Low time — switch to red */
+.timer-bar-fill.low {
+  background: linear-gradient(90deg, var(--color-terracotta-600), var(--color-terracotta-300));
+  animation:  pulse 0.8s ease-in-out infinite;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   EXPERIENCE / ELO progress bar
+   ────────────────────────────────────────────────────────────────── */
+.xp-bar {
+  height:     6px;
+  background: var(--bg-secondary);
+  border-radius: var(--radius-full);
+  overflow:   hidden;
+}
+.xp-fill {
+  height:     100%;
+  background: linear-gradient(90deg, var(--color-emerald-700), var(--color-emerald-400));
+  border-radius: var(--radius-full);
+  transition: width 1s var(--ease-out);
+}

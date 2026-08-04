@@ -1,0 +1,723 @@
+<!DOCTYPE html>
+<html lang="fr" data-theme="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Songo Design System — Showcase</title>
+
+  <!-- Google Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.min.js"></script>
+
+  <!-- Design System Core -->
+  <link rel="stylesheet" href="variables.css">
+  <link rel="stylesheet" href="typography.css">
+  <link rel="stylesheet" href="spacing.css">
+  <link rel="stylesheet" href="shadows.css">
+  <link rel="stylesheet" href="layout.css">
+  <link rel="stylesheet" href="animations.css">
+
+  <!-- Components -->
+  <link rel="stylesheet" href="buttons.css">
+  <link rel="stylesheet" href="forms.css">
+  <link rel="stylesheet" href="icons/icons.css">
+  <link rel="stylesheet" href="components/badge.css">
+  <link rel="stylesheet" href="components/tooltip.css">
+  <link rel="stylesheet" href="components/tabs.css">
+  <link rel="stylesheet" href="components/accordion.css">
+  <link rel="stylesheet" href="components/pagination.css">
+  <link rel="stylesheet" href="components/loader.css">
+  <link rel="stylesheet" href="components/progress.css">
+  <link rel="stylesheet" href="components/notification.css">
+  <link rel="stylesheet" href="components/cards.css">
+  <link rel="stylesheet" href="components/timer.css">
+  <link rel="stylesheet" href="components/dialog.css">
+
+  <style>
+    /* Showcase specific styles */
+    .ds-page {
+      display: flex;
+    }
+    .ds-sidebar {
+      width: 260px;
+      position: sticky;
+      top: 0;
+      height: 100vh;
+      overflow-y: auto;
+      background: var(--bg-card);
+      border-right: 1px solid var(--border-subtle);
+      padding: var(--space-6);
+    }
+    .ds-content {
+      flex: 1;
+      padding: var(--space-10) var(--space-8);
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    .ds-section {
+      margin-bottom: var(--space-16);
+      padding-top: var(--space-10);
+      border-top: 1px solid var(--border-subtle);
+    }
+    .ds-section:first-child {
+      border-top: none;
+      padding-top: 0;
+    }
+    .ds-section-title {
+      margin-bottom: var(--space-6);
+      color: var(--color-gold-200);
+    }
+    .ds-color-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+      gap: var(--space-4);
+    }
+    .ds-color-swatch {
+      border-radius: var(--radius-md);
+      overflow: hidden;
+      border: 1px solid var(--border-subtle);
+    }
+    .ds-color-fill {
+      height: 80px;
+    }
+    .ds-color-info {
+      padding: var(--space-2);
+      font-size: 0.75rem;
+      background: var(--bg-secondary);
+      color: var(--text-secondary);
+    }
+    .ds-color-info strong {
+      display: block;
+      color: var(--text-primary);
+    }
+    .ds-component-demo {
+      padding: var(--space-6);
+      border: 1px solid var(--border-subtle);
+      border-radius: var(--radius-lg);
+      background: var(--bg-card);
+      background-image: radial-gradient(var(--border-subtle) 1px, transparent 1px);
+      background-size: 20px 20px;
+    }
+    .ds-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: var(--space-4);
+      align-items: center;
+      margin-bottom: var(--space-6);
+    }
+    .ds-row:last-child { margin-bottom: 0; }
+    
+    .theme-toggle-btn {
+      position: fixed;
+      top: 20px;
+      right: 20px;
+      z-index: 1000;
+    }
+  </style>
+</head>
+<body class="ds-page">
+
+  <!-- Theme Toggle -->
+  <button class="btn btn--secondary btn--icon-border theme-toggle-btn" onclick="toggleTheme()" title="Toggle Theme">
+    <i data-lucide="moon" id="theme-icon"></i>
+  </button>
+
+  <!-- Navigation -->
+  <nav class="ds-sidebar">
+    <div class="navbar-brand mb-8">
+      <div class="navbar-logo-icon">S</div>
+      <div class="navbar-wordmark">Design System</div>
+    </div>
+    
+    <div class="text-overline mb-2">Foundation</div>
+    <ul class="flex-col gap-1 mb-6 list-none p-0">
+      <li><a href="#colors" class="sidebar-link"><span class="sidebar-label">Colors</span></a></li>
+      <li><a href="#typography" class="sidebar-link"><span class="sidebar-label">Typography</span></a></li>
+      <li><a href="#shadows" class="sidebar-link"><span class="sidebar-label">Shadows</span></a></li>
+      <li><a href="#icons" class="sidebar-link"><span class="sidebar-label">Icons</span></a></li>
+    </ul>
+
+    <div class="text-overline mb-2">Components</div>
+    <ul class="flex-col gap-1 list-none p-0">
+      <li><a href="#buttons" class="sidebar-link"><span class="sidebar-label">Buttons</span></a></li>
+      <li><a href="#forms" class="sidebar-link"><span class="sidebar-label">Forms</span></a></li>
+      <li><a href="#badges" class="sidebar-link"><span class="sidebar-label">Badges & Chips</span></a></li>
+      <li><a href="#cards" class="sidebar-link"><span class="sidebar-label">Cards</span></a></li>
+      <li><a href="#tabs" class="sidebar-link"><span class="sidebar-label">Tabs</span></a></li>
+      <li><a href="#accordion" class="sidebar-link"><span class="sidebar-label">Accordion</span></a></li>
+      <li><a href="#progress" class="sidebar-link"><span class="sidebar-label">Progress & Loaders</span></a></li>
+      <li><a href="#notifications" class="sidebar-link"><span class="sidebar-label">Notifications</span></a></li>
+      <li><a href="#dialogs" class="sidebar-link"><span class="sidebar-label">Dialogs & Modals</span></a></li>
+    </ul>
+  </nav>
+
+  <main class="ds-content">
+    
+    <div class="mb-16">
+      <h1 class="text-display-l text-gradient-brand mb-4">Songo UI</h1>
+      <p class="text-subtitle">The official design system and component library for the Songo web application. Inspired by African craftsmanship, wooden boards, and modern SaaS.</p>
+    </div>
+
+    <!-- ──────────────────────────────────────────────────────────
+         COLORS
+         ────────────────────────────────────────────────────────── -->
+    <section id="colors" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Colors</h2>
+      
+      <h3 class="text-h3 mb-4">Gold (Primary)</h3>
+      <div class="ds-color-grid mb-8">
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-gold-200)"></div><div class="ds-color-info"><strong>gold-200</strong></div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-gold-300)"></div><div class="ds-color-info"><strong>gold-300</strong></div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-gold-400)"></div><div class="ds-color-info"><strong>gold-400</strong></div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-gold-500)"></div><div class="ds-color-info"><strong>gold-500</strong> (Base)</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-gold-600)"></div><div class="ds-color-info"><strong>gold-600</strong></div></div>
+      </div>
+
+      <h3 class="text-h3 mb-4">Ebony (Backgrounds)</h3>
+      <div class="ds-color-grid mb-8">
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-ebony-600)"></div><div class="ds-color-info"><strong>ebony-600</strong></div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-ebony-700)"></div><div class="ds-color-info"><strong>ebony-700</strong></div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-ebony-800)"></div><div class="ds-color-info"><strong>ebony-800</strong> (Sec)</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-ebony-900)"></div><div class="ds-color-info"><strong>ebony-900</strong> (Pri)</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-ebony-950)"></div><div class="ds-color-info"><strong>ebony-950</strong></div></div>
+      </div>
+
+      <h3 class="text-h3 mb-4">Semantic</h3>
+      <div class="ds-color-grid">
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-success)"></div><div class="ds-color-info"><strong>Success</strong><br>emerald-400</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-warning)"></div><div class="ds-color-info"><strong>Warning</strong><br>gold-500</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-error)"></div><div class="ds-color-info"><strong>Error</strong><br>terracotta-500</div></div>
+        <div class="ds-color-swatch"><div class="ds-color-fill" style="background: var(--color-info)"></div><div class="ds-color-info"><strong>Info</strong><br>sapphire-300</div></div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         TYPOGRAPHY
+         ────────────────────────────────────────────────────────── -->
+    <section id="typography" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Typography</h2>
+      
+      <div class="ds-component-demo flex-col gap-6">
+        <div>
+          <div class="text-caption mb-1">Display XL (Cinzel, 700)</div>
+          <div class="text-display-xl">Songo Premium</div>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Display L (Cinzel, 700)</div>
+          <div class="text-display-l">A Beautiful Mind Game</div>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Heading 1 (Poppins, 700)</div>
+          <h1 class="text-h1">Welcome to the Lobby</h1>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Heading 2 (Poppins, 600)</div>
+          <h2 class="text-h2">Create a New Match</h2>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Heading 3 (Poppins, 600)</div>
+          <h3 class="text-h3">Player Statistics</h3>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Subtitle (Poppins, 400, Secondary Color)</div>
+          <p class="text-subtitle">Connect with players around the globe and prove your mastery.</p>
+        </div>
+        <hr class="divider">
+        <div>
+          <div class="text-caption mb-1">Body (Poppins, 400)</div>
+          <p class="text-body">Songo is a traditional mancala game played widely in Cameroon. The objective is to capture the opponent's seeds through calculated moves and strategic planning.</p>
+        </div>
+        <hr class="divider">
+        <div class="flex gap-10">
+          <div>
+            <div class="text-caption mb-1">Overline</div>
+            <div class="text-overline">Game Mode</div>
+          </div>
+          <div>
+            <div class="text-caption mb-1">Numeric</div>
+            <div class="text-numeric text-h3">14,205</div>
+          </div>
+          <div>
+            <div class="text-caption mb-1">Mono</div>
+            <div class="text-mono">AX-902V</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         BUTTONS
+         ────────────────────────────────────────────────────────── -->
+    <section id="buttons" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Buttons</h2>
+      
+      <div class="ds-component-demo">
+        <h4 class="text-overline mb-4">Variants</h4>
+        <div class="ds-row">
+          <button class="btn btn--primary">Primary Button</button>
+          <button class="btn btn--secondary">Secondary Button</button>
+          <button class="btn btn--outline">Outline Button</button>
+          <button class="btn btn--ghost">Ghost Button</button>
+          <button class="btn btn--danger">Danger Action</button>
+          <button class="btn btn--success">Accept Match</button>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">Sizes</h4>
+        <div class="ds-row">
+          <button class="btn btn--primary btn--sm">Small</button>
+          <button class="btn btn--primary">Medium (Default)</button>
+          <button class="btn btn--primary btn--lg">Large Button</button>
+          <button class="btn btn--primary btn--xl">Extra Large</button>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">States & Icons</h4>
+        <div class="ds-row">
+          <button class="btn btn--primary" disabled>Disabled</button>
+          <button class="btn btn--primary btn--loading">Loading</button>
+          
+          <button class="btn btn--primary">
+            <i data-lucide="play" class="icon icon-sm"></i> Play Now
+          </button>
+          <button class="btn btn--secondary">
+            Settings <i data-lucide="settings" class="icon icon-sm"></i>
+          </button>
+          
+          <button class="btn btn--icon btn--icon-border" title="Settings">
+            <i data-lucide="settings" class="icon"></i>
+          </button>
+          <button class="btn btn--icon" title="Close">
+            <i data-lucide="x" class="icon"></i>
+          </button>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">Special</h4>
+        <div class="ds-row">
+          <button class="btn--pill active">Beginner</button>
+          <button class="btn--pill">Expert</button>
+          
+          <div class="btn-group ml-6">
+            <button class="btn btn--secondary">Day</button>
+            <button class="btn btn--secondary">Week</button>
+            <button class="btn btn--secondary">Month</button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         FORMS
+         ────────────────────────────────────────────────────────── -->
+    <section id="forms" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Forms & Inputs</h2>
+      
+      <div class="ds-component-demo grid grid-cols-2 gap-8">
+        
+        <div class="form-group">
+          <label class="form-label">Username <span class="required">*</span></label>
+          <input type="text" class="input" placeholder="Enter your username">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Search Players</label>
+          <div class="input-wrap">
+            <i data-lucide="search" class="input-icon"></i>
+            <input type="text" class="input input--search" placeholder="Search...">
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Difficulty</label>
+          <div class="select-wrap">
+            <select class="select">
+              <option>Easy (Beginner)</option>
+              <option>Medium (Intermediate)</option>
+              <option>Hard (Expert)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">Error State</label>
+          <input type="text" class="input input--error" value="Invalid code">
+          <div class="form-error"><i data-lucide="alert-circle" class="icon icon-xs"></i> Code does not exist</div>
+        </div>
+
+        <!-- Toggles -->
+        <div class="flex-col gap-4">
+          <label class="checkbox-wrap">
+            <input type="checkbox" checked>
+            <div class="checkbox-box"></div>
+            <span class="checkbox-label">Remember me on this device</span>
+          </label>
+
+          <label class="radio-wrap">
+            <input type="radio" name="theme" checked>
+            <div class="radio-circle"></div>
+            <span class="checkbox-label">Dark Theme</span>
+          </label>
+          <label class="radio-wrap">
+            <input type="radio" name="theme">
+            <div class="radio-circle"></div>
+            <span class="checkbox-label">Light Theme</span>
+          </label>
+        </div>
+
+        <div class="flex-col gap-6">
+          <div class="flex items-center justify-between p-4 rounded bg-secondary">
+            <div>
+              <div class="text-body-strong">Sound Effects</div>
+              <div class="text-caption">Play capture sounds</div>
+            </div>
+            <label class="switch">
+              <input type="checkbox" checked>
+              <span class="switch-track"><span class="switch-thumb"></span></span>
+            </label>
+          </div>
+
+          <div class="slider-group">
+            <div class="slider-label">
+              <span class="form-label">Music Volume</span>
+              <span class="slider-value" id="vol-val">75%</span>
+            </div>
+            <div class="slider-row">
+              <i data-lucide="volume-1" class="icon icon-muted icon-sm"></i>
+              <input type="range" class="slider-input" value="75" min="0" max="100" 
+                     style="--value: 75%" oninput="this.style.setProperty('--value', this.value + '%'); document.getElementById('vol-val').innerText = this.value + '%'">
+              <i data-lucide="volume-2" class="icon icon-muted icon-sm"></i>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         BADGES & CHIPS
+         ────────────────────────────────────────────────────────── -->
+    <section id="badges" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Badges & Chips</h2>
+      
+      <div class="ds-component-demo">
+        <h4 class="text-overline mb-4">Badges</h4>
+        <div class="ds-row">
+          <span class="badge badge--default">Default</span>
+          <span class="badge badge--gold">Premium</span>
+          <span class="badge badge--success">Winner</span>
+          <span class="badge badge--error">Defeat</span>
+          <span class="badge badge--info">New Mode</span>
+          
+          <span class="badge badge--solid-gold">PRO</span>
+          
+          <span class="badge badge--default"><span class="badge-dot"></span> Live</span>
+          <span class="badge badge--emerald"><span class="badge-dot"></span> Online</span>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">Chips</h4>
+        <div class="ds-row">
+          <div class="chip">Songo Classic</div>
+          <div class="chip chip--interactive active">
+            <i data-lucide="check" class="icon icon-xs"></i> 3 Minutes
+          </div>
+          <div class="chip chip--interactive">10 Minutes</div>
+          
+          <div class="chip">
+            <div class="chip-avatar">P1</div>
+            Player 1
+            <button class="chip-dismiss"><i data-lucide="x"></i></button>
+          </div>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">Status Indicators</h4>
+        <div class="ds-row bg-secondary p-4 rounded inline-flex gap-6">
+          <span class="status-badge online"><span class="status-dot online"></span> Online</span>
+          <span class="status-badge away"><span class="status-dot away"></span> Away</span>
+          <span class="status-badge offline"><span class="status-dot offline"></span> Offline</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         CARDS
+         ────────────────────────────────────────────────────────── -->
+    <section id="cards" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Cards</h2>
+      
+      <div class="grid grid-cols-2 gap-6">
+        
+        <!-- Match Card -->
+        <div>
+          <h4 class="text-overline mb-3">Match History Card</h4>
+          <a href="#" class="match-card win">
+            <div class="match-players">
+              <div class="match-player">You</div>
+              <div class="match-vs">vs</div>
+              <div class="match-player">Guest_942</div>
+            </div>
+            <div class="match-result">
+              <div class="match-score">34 - 28</div>
+              <div class="match-outcome">Victory</div>
+            </div>
+            <div class="match-meta">
+              <div class="match-mode">Blitz 3m</div>
+              <div class="match-date">2 hrs ago</div>
+            </div>
+          </a>
+        </div>
+
+        <!-- Friend Card -->
+        <div>
+          <h4 class="text-overline mb-3">Friend Card</h4>
+          <div class="friend-card">
+            <div class="friend-avatar">
+              <div class="avatar avatar--sm"><span class="avatar-initials">AK</span></div>
+              <div class="badge-count">3</div>
+            </div>
+            <div class="friend-info">
+              <div class="friend-name">Amadou_K</div>
+              <div class="friend-status"><span class="status-dot online"></span> Playing Ranked</div>
+            </div>
+            <div class="friend-actions">
+              <button class="btn btn--icon btn--icon-border tooltip" data-tip="Spectate"><i data-lucide="eye" class="icon icon-sm"></i></button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Leaderboard -->
+        <div class="col-span-2">
+          <h4 class="text-overline mb-3">Leaderboard Card</h4>
+          <div class="leaderboard-card">
+            <div class="leaderboard-header">
+              <h3>Global Top Players</h3>
+            </div>
+            <div class="leaderboard-row top-1">
+              <div class="rank gold">1</div>
+              <div class="avatar avatar--sm"><span class="avatar-initials">S</span></div>
+              <div class="rank-info">
+                <div class="rank-name">SongoMaster</div>
+                <div class="rank-sub">Cameroon</div>
+              </div>
+              <div class="rank-stats">
+                <div class="rank-wr">68% WR</div>
+                <div class="rank-elo">2450</div>
+                <div class="rank-elo-delta up">+12</div>
+              </div>
+            </div>
+            <div class="leaderboard-row current-user">
+              <div class="rank">42</div>
+              <div class="avatar avatar--sm"><span class="avatar-initials">Y</span></div>
+              <div class="rank-info">
+                <div class="rank-name">You</div>
+              </div>
+              <div class="rank-stats">
+                <div class="rank-wr">52% WR</div>
+                <div class="rank-elo">1420</div>
+                <div class="rank-elo-delta down">-8</div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         TABS & ACCORDION
+         ────────────────────────────────────────────────────────── -->
+    <section id="tabs" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Navigation (Tabs & Accordion)</h2>
+      
+      <div class="ds-component-demo grid grid-cols-2 gap-10">
+        
+        <div>
+          <h4 class="text-overline mb-4">Standard Tabs</h4>
+          <div class="tabs">
+            <div class="tab-list">
+              <button class="tab-btn active">Friends <span class="tab-count">12</span></button>
+              <button class="tab-btn">Recent</button>
+              <button class="tab-btn">Requests <span class="tab-count" style="background:var(--color-error);color:white">2</span></button>
+            </div>
+          </div>
+          
+          <h4 class="text-overline mb-4 mt-8">Pill Tabs</h4>
+          <div class="tabs tabs--pill">
+            <div class="tab-list">
+              <button class="tab-btn active">Global</button>
+              <button class="tab-btn">Local</button>
+              <button class="tab-btn">Friends</button>
+            </div>
+          </div>
+        </div>
+
+        <div>
+          <h4 class="text-overline mb-4">Accordion (JS-free CSS Grid animation)</h4>
+          <div class="accordion accordion--bordered">
+            <div class="accordion-item open">
+              <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+                How do I win a game?
+                <span class="accordion-chevron"></span>
+              </button>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div class="accordion-content">
+                    You win by capturing more than half of the 70 seeds on the board (36 or more). Captures happen when your last sown seed lands in an opponent's pit making it contain 2, 3, or 4 seeds.
+                  </div>
+                </div>
+              </div>
+            </div>
+            <div class="accordion-item">
+              <button class="accordion-trigger" onclick="this.parentElement.classList.toggle('open')">
+                Can I play offline?
+                <span class="accordion-chevron"></span>
+              </button>
+              <div class="accordion-body">
+                <div class="accordion-body-inner">
+                  <div class="accordion-content">
+                    Yes, you can play locally against a friend on the same device, or against the AI (which runs entirely in your browser).
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         PROGRESS & LOADERS
+         ────────────────────────────────────────────────────────── -->
+    <section id="progress" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Progress & Loaders</h2>
+      
+      <div class="ds-component-demo">
+        <h4 class="text-overline mb-4">Progress Bars</h4>
+        <div class="grid grid-cols-2 gap-8 mb-10">
+          <div class="progress-group">
+            <div class="progress-header">
+              <span class="progress-label">Experience</span>
+              <span class="progress-value">850 / 1000</span>
+            </div>
+            <div class="progress progress--md">
+              <div class="progress-bar progress-bar--gold" style="width: 85%"></div>
+            </div>
+          </div>
+          
+          <div class="progress-group">
+            <div class="progress-header">
+              <span class="progress-label">Win Rate</span>
+              <span class="progress-value">62%</span>
+            </div>
+            <div class="progress progress--md">
+              <div class="progress-bar progress-bar--success" style="width: 62%"></div>
+            </div>
+          </div>
+          
+          <div class="col-span-2">
+            <div class="text-caption mb-2">Indeterminate Loading</div>
+            <div class="progress progress--sm">
+              <div class="progress-bar progress-bar--striped progress-bar--indeterminate"></div>
+            </div>
+          </div>
+        </div>
+
+        <h4 class="text-overline mb-4">Spinners & Dots</h4>
+        <div class="ds-row gap-10">
+          <div class="spinner-wrap">
+            <div class="spinner spinner--gold spinner--lg"></div>
+            <span class="spinner-label">Matching...</span>
+          </div>
+          
+          <div class="spinner-wrap">
+            <div class="spinner spinner--sapphire"></div>
+          </div>
+
+          <div class="bg-secondary p-4 rounded">
+            <div class="dots-loader">
+              <span></span><span></span><span></span>
+            </div>
+          </div>
+        </div>
+
+        <h4 class="text-overline mb-4 mt-8">Skeleton Screen</h4>
+        <div class="skeleton-player-card max-w-sm">
+          <div class="skeleton skeleton-avatar"></div>
+          <div class="skeleton-block flex-1">
+            <div class="skeleton skeleton-text"></div>
+            <div class="skeleton skeleton-text sm"></div>
+          </div>
+          <div class="skeleton skeleton-btn" style="width: 60px"></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ──────────────────────────────────────────────────────────
+         NOTIFICATIONS
+         ────────────────────────────────────────────────────────── -->
+    <section id="notifications" class="ds-section">
+      <h2 class="text-h2 ds-section-title">Notifications</h2>
+      
+      <div class="ds-component-demo bg-primary relative" style="height: 300px; overflow: hidden">
+        <div class="text-caption mb-4">Static Preview (These normally float over the UI)</div>
+        
+        <div style="position:absolute; top: 20px; right: 20px;">
+          <div class="net-chip" style="position:relative; inset:auto;">
+            <span class="net-dot warn"></span>
+            <span>Poor Connection</span>
+            <span id="net-ping">185ms</span>
+          </div>
+        </div>
+        
+        <div class="toast-container" style="position:absolute; bottom: 20px; left: 50%; transform: translateX(-50%)">
+          <div class="toast success" style="animation:none">
+            <i data-lucide="check-circle" class="toast-icon"></i>
+            <div class="toast-body">
+              <div class="toast-title">Link Copied</div>
+            </div>
+          </div>
+          
+          <div class="toast info" style="animation:none">
+            <i data-lucide="info" class="toast-icon"></i>
+            <div class="toast-body">
+              <div class="toast-title">Your Turn</div>
+              <div class="toast-msg">You have 2 minutes to play.</div>
+            </div>
+            <button class="toast-dismiss"><i data-lucide="x"></i></button>
+          </div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Initialize Lucide icons
+    lucide.createIcons();
+
+    // Theme toggle logic
+    function toggleTheme() {
+      const html = document.documentElement;
+      const current = html.getAttribute('data-theme');
+      const next = current === 'dark' ? 'light' : 'dark';
+      html.setAttribute('data-theme', next);
+      
+      // Update icon
+      const iconBtn = document.getElementById('theme-icon');
+      if (next === 'light') {
+        iconBtn.setAttribute('data-lucide', 'sun');
+      } else {
+        iconBtn.setAttribute('data-lucide', 'moon');
+      }
+      lucide.createIcons();
+    }
+  </script>
+</body>
+</html>

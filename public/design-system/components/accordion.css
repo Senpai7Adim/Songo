@@ -1,0 +1,160 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — components/accordion.css
+   Accordion with smooth CSS-only collapse animations
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   ACCORDION WRAPPER
+   ────────────────────────────────────────────────────────────────── */
+.accordion {
+  display:        flex;
+  flex-direction: column;
+  gap:            var(--space-2);
+  width:          100%;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   ACCORDION ITEM
+   ────────────────────────────────────────────────────────────────── */
+.accordion-item {
+  background:    var(--bg-card);
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-lg);
+  overflow:      hidden;
+  transition:
+    border-color var(--duration-fast) var(--ease-ui),
+    box-shadow   var(--duration-fast) var(--ease-ui);
+}
+.accordion-item.open {
+  border-color: var(--border-primary);
+  box-shadow:   var(--shadow-sm);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   ACCORDION TRIGGER
+   ────────────────────────────────────────────────────────────────── */
+.accordion-trigger {
+  width:           100%;
+  display:         flex;
+  align-items:     center;
+  justify-content: space-between;
+  gap:             var(--space-4);
+  padding:         var(--space-4) var(--space-5);
+  background:      none;
+  border:          none;
+  color:           var(--text-primary);
+  font-family:     var(--font-body);
+  font-size:       0.9375rem;
+  font-weight:     600;
+  text-align:      left;
+  cursor:          pointer;
+  transition:
+    color       var(--duration-fast) var(--ease-ui),
+    background  var(--duration-fast) var(--ease-ui);
+  user-select:     none;
+}
+.accordion-trigger:hover { background: var(--ash); }
+.accordion-item.open .accordion-trigger { color: var(--color-gold-200); }
+.accordion-trigger:focus-visible {
+  outline:        2px solid var(--color-gold-500);
+  outline-offset: -2px;
+}
+
+/* Trigger icon row */
+.accordion-trigger-content {
+  display:     flex;
+  align-items: center;
+  gap:         var(--space-3);
+  flex:        1;
+  min-width:   0;
+}
+.accordion-icon {
+  font-size:   1.2rem;
+  flex-shrink: 0;
+  width:       36px;
+  height:      36px;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  background:  var(--ash);
+  border-radius: var(--radius-sm);
+  border:      1px solid var(--border-subtle);
+}
+
+/* Chevron */
+.accordion-chevron {
+  flex-shrink: 0;
+  color:       var(--text-muted);
+  width:       20px;
+  height:      20px;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  transition:  transform var(--duration-mid) var(--ease-spring),
+               color     var(--duration-fast);
+}
+.accordion-chevron::before {
+  content:       '';
+  display:       block;
+  width:         8px;
+  height:        8px;
+  border-right:  2px solid currentColor;
+  border-bottom: 2px solid currentColor;
+  transform:     rotate(45deg) translateY(-2px);
+  transition:    transform var(--duration-mid) var(--ease-spring);
+}
+.accordion-item.open .accordion-chevron         { color: var(--color-gold-500); }
+.accordion-item.open .accordion-chevron::before { transform: rotate(225deg) translateY(-2px); }
+
+/* ──────────────────────────────────────────────────────────────────
+   ACCORDION BODY — uses grid trick for smooth height animation
+   ────────────────────────────────────────────────────────────────── */
+.accordion-body {
+  display:    grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-mid) var(--ease-ui);
+}
+.accordion-item.open .accordion-body {
+  grid-template-rows: 1fr;
+}
+.accordion-body-inner {
+  overflow:   hidden;
+}
+.accordion-content {
+  padding:    0 var(--space-5) var(--space-5);
+  color:      var(--text-secondary);
+  font-size:  0.9rem;
+  line-height: 1.65;
+  border-top: 1px solid var(--border-subtle);
+  padding-top: var(--space-4);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   FLUSH VARIANT — no card wrapper, just dividers
+   ────────────────────────────────────────────────────────────────── */
+.accordion--flush .accordion-item {
+  background:    none;
+  border:        none;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+}
+.accordion--flush .accordion-item:last-child { border-bottom: none; }
+.accordion--flush .accordion-trigger { padding-left: 0; padding-right: 0; }
+.accordion--flush .accordion-content { padding-left: 0; padding-right: 0; }
+
+/* ──────────────────────────────────────────────────────────────────
+   BORDERED VARIANT
+   ────────────────────────────────────────────────────────────────── */
+.accordion--bordered {
+  border:        1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  overflow:      hidden;
+  gap:           0;
+}
+.accordion--bordered .accordion-item {
+  border:        none;
+  border-bottom: 1px solid var(--border-subtle);
+  border-radius: 0;
+}
+.accordion--bordered .accordion-item:last-child { border-bottom: none; }

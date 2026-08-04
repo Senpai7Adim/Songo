@@ -1,0 +1,182 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — components/tabs.css
+   Horizontal and vertical tab navigation
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   TABS CONTAINER
+   ────────────────────────────────────────────────────────────────── */
+.tabs {
+  display:        flex;
+  flex-direction: column;
+  width:          100%;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TAB LIST — the clickable header strip
+   ────────────────────────────────────────────────────────────────── */
+.tab-list {
+  display:       flex;
+  align-items:   flex-end;
+  gap:           2px;
+  border-bottom: 1px solid var(--border-subtle);
+  overflow-x:    auto;
+  scrollbar-width: none;
+  position:      relative;
+  flex-shrink:   0;
+}
+.tab-list::-webkit-scrollbar { display: none; }
+
+/* ──────────────────────────────────────────────────────────────────
+   TAB BUTTON
+   ────────────────────────────────────────────────────────────────── */
+.tab-btn {
+  position:      relative;
+  display:       inline-flex;
+  align-items:   center;
+  gap:           var(--space-2);
+  padding:       10px 18px;
+  background:    none;
+  border:        none;
+  color:         var(--text-secondary);
+  font-family:   var(--font-body);
+  font-size:     0.875rem;
+  font-weight:   500;
+  cursor:        pointer;
+  white-space:   nowrap;
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  transition:
+    color       var(--duration-fast) var(--ease-ui),
+    background  var(--duration-fast) var(--ease-ui);
+  user-select:   none;
+}
+.tab-btn::after {
+  content:       '';
+  position:      absolute;
+  bottom:        -1px;
+  left:          0;
+  right:         0;
+  height:        2px;
+  background:    var(--color-gold-500);
+  transform:     scaleX(0);
+  border-radius: 2px 2px 0 0;
+  transition:    transform var(--duration-mid) var(--ease-spring);
+}
+.tab-btn:hover { color: var(--text-primary); background: var(--ash); }
+.tab-btn.active {
+  color:       var(--color-gold-200);
+  font-weight: 600;
+}
+.tab-btn.active::after { transform: scaleX(1); }
+.tab-btn:focus-visible {
+  outline:        2px solid var(--color-gold-500);
+  outline-offset: 2px;
+}
+.tab-btn .tab-count {
+  background:    rgba(200, 146, 42, 0.18);
+  color:         var(--color-gold-200);
+  border-radius: var(--radius-full);
+  font-size:     0.6875rem;
+  font-weight:   700;
+  padding:       1px 6px;
+  min-width:     18px;
+  text-align:    center;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TAB PANEL
+   ────────────────────────────────────────────────────────────────── */
+.tab-panel {
+  padding:    var(--space-6) 0;
+  display:    none;
+  animation:  fade-in var(--duration-mid) var(--ease-ui);
+}
+.tab-panel.active { display: block; }
+
+/* ──────────────────────────────────────────────────────────────────
+   PILL TABS — rounded floating variant
+   ────────────────────────────────────────────────────────────────── */
+.tabs--pill .tab-list {
+  border-bottom: none;
+  background:    var(--bg-secondary);
+  border-radius: var(--radius-full);
+  padding:       4px;
+  gap:           0;
+  display:       inline-flex;
+  width:         auto;
+}
+.tabs--pill .tab-btn {
+  border-radius: var(--radius-full);
+  padding:       7px 18px;
+}
+.tabs--pill .tab-btn::after { display: none; }
+.tabs--pill .tab-btn.active {
+  background:  linear-gradient(135deg, var(--color-gold-500), var(--color-gold-600));
+  color:       var(--color-ebony-950);
+  box-shadow:  0 2px 10px rgba(200,146,42,0.30);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   CARD TABS — elevated card variant
+   ────────────────────────────────────────────────────────────────── */
+.tabs--card .tab-list {
+  border-bottom: none;
+  gap:           6px;
+}
+.tabs--card .tab-btn {
+  background:    var(--bg-secondary);
+  border:        1px solid var(--border-subtle);
+  border-radius: var(--radius-sm);
+  color:         var(--text-secondary);
+}
+.tabs--card .tab-btn::after { display: none; }
+.tabs--card .tab-btn.active {
+  background:   var(--bg-card);
+  border-color: var(--color-gold-500);
+  color:        var(--color-gold-200);
+  box-shadow:   0 2px 8px rgba(200,146,42,0.15);
+}
+.tabs--card .tab-panel {
+  background:    var(--bg-card);
+  border:        1px solid var(--border-primary);
+  border-radius: var(--radius-lg);
+  padding:       var(--space-6);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   VERTICAL TABS
+   ────────────────────────────────────────────────────────────────── */
+.tabs--vertical {
+  flex-direction: row;
+  gap:            var(--space-4);
+}
+.tabs--vertical .tab-list {
+  flex-direction: column;
+  align-items:    stretch;
+  border-bottom:  none;
+  border-right:   1px solid var(--border-subtle);
+  padding-right:  var(--space-2);
+  min-width:      160px;
+  gap:            2px;
+}
+.tabs--vertical .tab-btn {
+  border-radius: var(--radius-sm) 0 0 var(--radius-sm);
+  text-align:    left;
+  justify-content: flex-start;
+}
+.tabs--vertical .tab-btn::after {
+  top:    0;
+  bottom: 0;
+  left:   auto;
+  right:  -1px;
+  width:  2px;
+  height: auto;
+  transform: scaleY(0);
+  border-radius: 2px 0 0 2px;
+}
+.tabs--vertical .tab-btn.active::after { transform: scaleY(1); }
+.tabs--vertical .tab-panel {
+  flex: 1;
+  padding-top: 0;
+}

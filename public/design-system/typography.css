@@ -1,0 +1,258 @@
+/* ═══════════════════════════════════════════════════════════════════
+   SONGO DESIGN SYSTEM — typography.css
+   Full type scale: Display XL → Caption
+   Requires: variables.css
+   ═══════════════════════════════════════════════════════════════════ */
+
+/* ──────────────────────────────────────────────────────────────────
+   BASE RESET
+   ────────────────────────────────────────────────────────────────── */
+html {
+  font-size: 16px; /* 1rem base */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+
+body {
+  font-family: var(--font-body);
+  font-size:   1rem;         /* 16px */
+  font-weight: 400;
+  line-height: 1.6;
+  color: var(--text-primary);
+  -webkit-font-smoothing:  antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   TYPE SCALE CLASSES
+   Naming: .text-{level}
+   ────────────────────────────────────────────────────────────────── */
+
+/* Display XL — Hero / Landing logo */
+.text-display-xl {
+  font-family:    var(--font-display);
+  font-size:      clamp(3rem, 8vw, 5rem);   /* 48–80px */
+  font-weight:    700;
+  line-height:    1.08;
+  letter-spacing: 0.04em;
+}
+
+/* Display L — Section hero headings */
+.text-display-l {
+  font-family:    var(--font-display);
+  font-size:      clamp(2.25rem, 5.5vw, 3.5rem); /* 36–56px */
+  font-weight:    700;
+  line-height:    1.1;
+  letter-spacing: 0.03em;
+}
+
+/* Heading 1 — Page title */
+.text-h1,
+h1 {
+  font-family:    var(--font-body);
+  font-size:      clamp(1.75rem, 3.5vw, 2.25rem); /* 28–36px */
+  font-weight:    700;
+  line-height:    1.2;
+  letter-spacing: -0.01em;
+}
+
+/* Heading 2 — Section title */
+.text-h2,
+h2 {
+  font-family:    var(--font-body);
+  font-size:      clamp(1.375rem, 2.5vw, 1.75rem); /* 22–28px */
+  font-weight:    600;
+  line-height:    1.25;
+  letter-spacing: -0.005em;
+}
+
+/* Heading 3 — Sub-section / card title */
+.text-h3,
+h3 {
+  font-family:    var(--font-body);
+  font-size:      clamp(1.125rem, 2vw, 1.375rem); /* 18–22px */
+  font-weight:    600;
+  line-height:    1.3;
+  letter-spacing: 0;
+}
+
+/* Subtitle — Descriptive sub-heading under titles */
+.text-subtitle {
+  font-family:    var(--font-body);
+  font-size:      clamp(0.9375rem, 1.5vw, 1.125rem); /* 15–18px */
+  font-weight:    400;
+  line-height:    1.5;
+  letter-spacing: 0.01em;
+  color:          var(--text-secondary);
+}
+
+/* Body — Default reading text */
+.text-body,
+p {
+  font-family:    var(--font-body);
+  font-size:      1rem;    /* 16px */
+  font-weight:    400;
+  line-height:    1.65;
+  letter-spacing: 0;
+}
+
+/* Body Strong — Emphasized body text */
+.text-body-strong {
+  font-family:    var(--font-body);
+  font-size:      1rem;
+  font-weight:    600;
+  line-height:    1.5;
+  letter-spacing: 0;
+}
+
+/* Small — Secondary info, meta labels */
+.text-sm {
+  font-family:    var(--font-body);
+  font-size:      0.875rem; /* 14px */
+  font-weight:    400;
+  line-height:    1.55;
+  letter-spacing: 0;
+}
+
+/* Caption — Timestamps, annotations, legal */
+.text-caption {
+  font-family:    var(--font-body);
+  font-size:      0.75rem;  /* 12px */
+  font-weight:    400;
+  line-height:    1.5;
+  letter-spacing: 0.01em;
+  color:          var(--text-muted);
+}
+
+/* Overline — Section labels, category tags */
+.text-overline {
+  font-family:    var(--font-body);
+  font-size:      0.6875rem; /* 11px */
+  font-weight:    600;
+  line-height:    1.4;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color:          var(--text-muted);
+}
+
+/* Button label — Used on all button text */
+.text-btn {
+  font-family:    var(--font-body);
+  font-size:      0.875rem; /* 14px */
+  font-weight:    600;
+  line-height:    1;
+  letter-spacing: 0.02em;
+}
+
+.text-btn-lg {
+  font-family:    var(--font-body);
+  font-size:      1rem;
+  font-weight:    600;
+  line-height:    1;
+  letter-spacing: 0.02em;
+}
+
+/* Mono — Code, OTP, room codes */
+.text-mono {
+  font-family:    'Courier New', Courier, monospace;
+  font-size:      0.9375rem;
+  font-weight:    700;
+  letter-spacing: 0.05em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Numeric — Scores, timers, stats */
+.text-numeric {
+  font-variant-numeric: tabular-nums;
+  letter-spacing:        0.03em;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   LOGO / BRAND TEXT
+   ────────────────────────────────────────────────────────────────── */
+.text-logo {
+  font-family:    var(--font-display);
+  font-size:      clamp(2.8rem, 9vw, 4rem);
+  font-weight:    700;
+  line-height:    1;
+  letter-spacing: 0.04em;
+  background:     linear-gradient(140deg, var(--color-gold-200) 0%, var(--color-gold-500) 55%, #B07820 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.text-wordmark {
+  font-family:    var(--font-display);
+  font-size:      1.25rem;
+  font-weight:    700;
+  letter-spacing: 0.06em;
+  color:          var(--color-gold-200);
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   COLOR UTILITIES
+   ────────────────────────────────────────────────────────────────── */
+.text-primary   { color: var(--text-primary); }
+.text-secondary { color: var(--text-secondary); }
+.text-muted     { color: var(--text-muted); }
+.text-disabled  { color: var(--text-disabled); }
+.text-brand     { color: var(--color-gold-500); }
+.text-gold      { color: var(--color-gold-200); }
+.text-success   { color: var(--color-success-text); }
+.text-warning   { color: var(--color-warning-text); }
+.text-error     { color: var(--color-error-text); }
+.text-info      { color: var(--color-info-text); }
+
+/* ──────────────────────────────────────────────────────────────────
+   WEIGHT UTILITIES
+   ────────────────────────────────────────────────────────────────── */
+.font-light    { font-weight: 300; }
+.font-regular  { font-weight: 400; }
+.font-medium   { font-weight: 500; }
+.font-semibold { font-weight: 600; }
+.font-bold     { font-weight: 700; }
+
+/* ──────────────────────────────────────────────────────────────────
+   ALIGNMENT UTILITIES
+   ────────────────────────────────────────────────────────────────── */
+.text-left   { text-align: left; }
+.text-center { text-align: center; }
+.text-right  { text-align: right; }
+
+/* ──────────────────────────────────────────────────────────────────
+   TRUNCATION
+   ────────────────────────────────────────────────────────────────── */
+.text-truncate {
+  white-space:   nowrap;
+  overflow:      hidden;
+  text-overflow: ellipsis;
+}
+.text-clamp-2 {
+  display:            -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  overflow:           hidden;
+}
+.text-clamp-3 {
+  display:            -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow:           hidden;
+}
+
+/* ──────────────────────────────────────────────────────────────────
+   GRADIENT TEXT UTILITY
+   ────────────────────────────────────────────────────────────────── */
+.text-gradient-gold {
+  background: linear-gradient(135deg, var(--color-gold-200) 0%, var(--color-gold-500) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip:         text;
+}
+.text-gradient-brand {
+  background: linear-gradient(140deg, var(--color-gold-200) 0%, var(--color-gold-500) 55%, #B07820 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip:         text;
+}
