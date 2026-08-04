@@ -518,12 +518,17 @@ h1,h2,h3,h4 { font-weight: 600; line-height: 1.2; }
 .ping-mid  .ping-bar span:nth-child(2) { background: var(--gold); }
 .ping-bad  .ping-bar span:nth-child(1) { background: var(--terracotta); }
 
-/* Thinking indicator */
+/* Thinking indicator — inline next to player name */
 .thinking-dots {
-  display: none; align-items: center; gap: 4px;
-  height: 16px;
+  display: inline-flex; align-items: center; gap: 3px;
+  height: 14px;
+  visibility: hidden;
+  opacity: 0;
+  transition: opacity 0.2s;
+  margin-left: 4px;
+  vertical-align: middle;
 }
-.thinking-dots.active { display: flex; }
+.thinking-dots.active { visibility: visible; opacity: 1; }
 .thinking-dots span {
   width: 5px; height: 5px; border-radius: 50%;
   background: var(--text-secondary);
