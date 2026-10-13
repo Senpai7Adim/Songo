@@ -584,6 +584,7 @@ function showGame(){
   document.getElementById('menu').classList.add('hidden');
   document.getElementById('lobby').classList.add('hidden');
   document.getElementById('game').classList.remove('hidden');
+  if(window.Router && Router.current() !== '/game') Router.navigate('/game');
   const tags={ai:'🤖 Solo vs Ordinateur',local:'👥 Local à 2 joueurs',online:'🌐 En ligne — '+roomCode};
   document.getElementById('mode-tag').textContent=tags[mode]||'';
   Animations.hideEndModal();
@@ -868,6 +869,7 @@ function startMode(m){
     document.getElementById('lobby-err').textContent='';
     document.getElementById('join-code').value='';
     getSocket();
+    if(window.Router && Router.current() !== '/lobby') Router.navigate('/lobby');
     return;
   }
   if(m==='ai'){
@@ -909,6 +911,7 @@ function backToMenu(){
   setNetIndicator('ok');
   if(mode!=='online') document.getElementById('net-indicator').classList.add('hidden');
   applyProfileToUI();
+  if(window.Router && Router.current() !== '/home') Router.navigate('/home');
 }
 
 function createRoom(){
@@ -1400,6 +1403,295 @@ function toggleVibration(){
   localStorage.setItem('songo_vibrate',_vibrateEnabled.toString());
 }
 
+/* ══════════════════════════════════════════════════════════════
+   WELCOME ONBOARDING SCREEN (New Players)
+   ══════════════════════════════════════════════════════════════ */
+let wlcState = {
+  step: 1,
+  avatar: '👤',
+  name: '',
+  country: 'CM'
+};
+
+function initWelcomeScreen() {
+  const p = (window.Profile && Profile.get()) || { avatar: '👤', name: '', country: 'CM' };
+  wlcState.avatar = p.avatar || '👤';
+  wlcState.name = p.name || '';
+  wlcState.country = p.country || 'CM';
+
+  // Populate avatar grid
+  const grid = document.getElementById('wlc-avatar-grid');
+  if (grid && window.Profile && Profile.AVATARS) {
+    grid.innerHTML = '';
+    Profile.AVATARS.forEach(av => {
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'wlc-av-btn' + (av === wlcState.avatar ? ' selected' : '');
+      btn.textContent = av;
+      btn.setAttribute('aria-label', `Choisir l'avatar ${av}`);
+      btn.onclick = () => {
+        wlcState.avatar = av;
+        grid.querySelectorAll('.wlc-av-btn').forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        updateWelcomePreview();
+      };
+      grid.appendChild(btn);
+    });
+  }
+
+  // Populate country select
+  const countrySel = document.getElementById('wlc-country');
+  if (countrySel && window.Profile && Profile.COUNTRIES) {
+    countrySel.innerHTML = '';
+    Profile.COUNTRIES.forEach(c => {
+      const opt = document.createElement('option');
+      opt.value = c.code;
+      opt.textContent = c.emoji + '  ' + c.name;
+      if (c.code === wlcState.country) opt.selected = true;
+      countrySel.appendChild(opt);
+    });
+    countrySel.onchange = () => {
+      wlcState.country = countrySel.value;
+      updateWelcomePreview();
+    };
+  }
+
+  // Setup name input
+  const nameInput = document.getElementById('wlc-name');
+  if (nameInput) {
+    nameInput.value = wlcState.name;
+    nameInput.oninput = () => {
+      wlcState.name = nameInput.value.slice(0, 16);
+      updateWelcomePreview();
+    };
+    nameInput.onkeydown = (e) => {
+      if (e.key === 'Enter') {
+        e.preventDefault();
+        wlcNext(2);
+      }
+    };
+  }
+
+  updateWelcomePreview();
+  wlcSetStep(1);
+}
+
+function updateWelcomePreview() {
+  const avEl = document.getElementById('wlc-preview-av');
+  const nameEl = document.getElementById('wlc-preview-name');
+  const flagEl = document.getElementById('wlc-preview-flag');
+
+  const c = window.Profile && Profile.COUNTRIES ? Profile.COUNTRIES.find(x => x.code === wlcState.country) : null;
+  const flag = c ? c.emoji : '🌍';
+  const displayName = (wlcState.name && wlcState.name.trim()) ? wlcState.name.trim() : 'Votre nom';
+
+  if (avEl) avEl.textContent = wlcState.avatar || '👤';
+  if (nameEl) nameEl.textContent = displayName;
+  if (flagEl) flagEl.textContent = flag;
+}
+
+function wlcSetStep(step) {
+  wlcState.step = step;
+
+  // Update dots
+  for (let i = 1; i <= 3; i++) {
+    const dot = document.getElementById(`wlc-dot-${i}`);
+    if (dot) dot.classList.toggle('active', i === step);
+  }
+
+  // Update panes
+  for (let i = 1; i <= 3; i++) {
+    const pane = document.getElementById(`wlc-step-${i}`);
+    if (pane) {
+      if (i === step) {
+        pane.classList.remove('hidden');
+        pane.classList.add('wlc-pane-enter');
+        setTimeout(() => pane.classList.remove('wlc-pane-enter'), 400);
+      } else {
+        pane.classList.add('hidden');
+        pane.classList.remove('wlc-pane-enter');
+      }
+    }
+  }
+
+  if (step === 2) {
+    const nameInput = document.getElementById('wlc-name');
+    if (nameInput) setTimeout(() => nameInput.focus(), 100);
+  } else if (step === 3) {
+    updateWelcomePreview();
+  }
+}
+
+function wlcNext(fromStep) {
+  if (typeof snd === 'function') snd('click');
+  if (fromStep === 1) {
+    wlcSetStep(2);
+  } else if (fromStep === 2) {
+    const nameInput = document.getElementById('wlc-name');
+    if (nameInput) {
+      wlcState.name = nameInput.value.trim();
+    }
+    updateWelcomePreview();
+    wlcSetStep(3);
+  }
+}
+
+function wlcPrev(fromStep) {
+  if (typeof snd === 'function') snd('click');
+  if (fromStep === 2) {
+    wlcSetStep(1);
+  } else if (fromStep === 3) {
+    wlcSetStep(2);
+  }
+}
+
+function wlcFinish() {
+  if (typeof snd === 'function') snd('game_start');
+  const nameInput = document.getElementById('wlc-name');
+  const finalName = (nameInput && nameInput.value.trim()) || (wlcState.name && wlcState.name.trim()) || 'Joueur';
+  const countrySel = document.getElementById('wlc-country');
+  const finalCountry = (countrySel && countrySel.value) || wlcState.country || 'CM';
+  const finalAvatar = wlcState.avatar || '👤';
+
+  // Save profile and mark setupDone = true
+  if (window.Profile) {
+    Profile.updateProfile({
+      name: finalName,
+      avatar: finalAvatar,
+      country: finalCountry
+    });
+  }
+
+  applyProfileToUI();
+  if (socket && socket.connected && window.Profile && Profile.token()) {
+    socket.emit('identify', Profile.token());
+  }
+
+  const welcomeScreen = document.getElementById('welcome-screen');
+  const menuScreen = document.getElementById('menu');
+
+  if (welcomeScreen) {
+    welcomeScreen.classList.add('wlc-exit');
+    setTimeout(() => {
+      document.documentElement.classList.remove('is-new-player');
+      welcomeScreen.classList.add('hidden');
+      welcomeScreen.classList.remove('wlc-exit');
+
+      if (window.Router) {
+        Router.navigate('/home');
+      } else {
+        viewHome();
+      }
+
+      if (typeof toast === 'function') {
+        const dName = window.Profile ? Profile.displayName() : finalName;
+        toast(`Bienvenue sur Songo, ${dName} ! 🎮`, 'success');
+      }
+    }, 450);
+  } else {
+    document.documentElement.classList.remove('is-new-player');
+    if (window.Router) {
+      Router.navigate('/home');
+    } else {
+      viewHome();
+    }
+  }
+}
+
+window.wlcNext = wlcNext;
+window.wlcPrev = wlcPrev;
+window.wlcFinish = wlcFinish;
+window.initWelcomeScreen = initWelcomeScreen;
+
+/* ══════════════════════════════════════════════════════════════
+   ROUTER VIEWS & ROUTE HANDLERS
+   ══════════════════════════════════════════════════════════════ */
+function viewWelcome() {
+  document.documentElement.classList.add('is-new-player');
+  const wlc = document.getElementById('welcome-screen');
+  const menu = document.getElementById('menu');
+  const game = document.getElementById('game');
+  const lobby = document.getElementById('lobby');
+  const aiSetup = document.getElementById('ai-setup');
+  if (wlc) wlc.classList.remove('hidden');
+  if (menu) menu.classList.add('hidden');
+  if (game) game.classList.add('hidden');
+  if (lobby) lobby.classList.add('hidden');
+  if (aiSetup) aiSetup.classList.add('hidden');
+  initWelcomeScreen();
+  document.title = 'Songo — Bienvenue';
+}
+
+function viewHome() {
+  document.documentElement.classList.remove('is-new-player');
+  const wlc = document.getElementById('welcome-screen');
+  const menu = document.getElementById('menu');
+  const game = document.getElementById('game');
+  const lobby = document.getElementById('lobby');
+  const aiSetup = document.getElementById('ai-setup');
+  if (wlc) wlc.classList.add('hidden');
+  if (menu) menu.classList.remove('hidden');
+  if (game) game.classList.add('hidden');
+  if (lobby) lobby.classList.add('hidden');
+  if (aiSetup) aiSetup.classList.add('hidden');
+  applyProfileToUI();
+  document.title = 'Songo — Mancala Camerounais | Édition Premium';
+}
+
+function viewLobby() {
+  document.documentElement.classList.remove('is-new-player');
+  const wlc = document.getElementById('welcome-screen');
+  const menu = document.getElementById('menu');
+  const game = document.getElementById('game');
+  const lobby = document.getElementById('lobby');
+  const aiSetup = document.getElementById('ai-setup');
+  if (wlc) wlc.classList.add('hidden');
+  if (menu) menu.classList.add('hidden');
+  if (game) game.classList.add('hidden');
+  if (aiSetup) aiSetup.classList.add('hidden');
+  if (lobby) {
+    lobby.classList.remove('hidden');
+    document.getElementById('lobby-create').classList.remove('hidden');
+    document.getElementById('lobby-waiting').classList.add('hidden');
+    document.getElementById('lobby-join').classList.remove('hidden');
+    document.getElementById('lobby-err').textContent = '';
+    document.getElementById('join-code').value = '';
+  }
+  getSocket();
+  document.title = 'Songo — Salon Multijoueur';
+}
+
+function viewGame() {
+  document.documentElement.classList.remove('is-new-player');
+  const wlc = document.getElementById('welcome-screen');
+  const menu = document.getElementById('menu');
+  const game = document.getElementById('game');
+  const lobby = document.getElementById('lobby');
+  const aiSetup = document.getElementById('ai-setup');
+  if (wlc) wlc.classList.add('hidden');
+  if (menu) menu.classList.add('hidden');
+  if (lobby) lobby.classList.add('hidden');
+  if (aiSetup) aiSetup.classList.add('hidden');
+  if (game) game.classList.remove('hidden');
+  document.title = 'Songo — Partie en cours';
+}
+
+function initRouter() {
+  if (!window.Router) return;
+  Router.register('/welcome', viewWelcome);
+  Router.register('/home', viewHome);
+  Router.register('/', viewHome);
+  Router.register('/lobby', viewLobby);
+  Router.register('/game', viewGame);
+  Router.init();
+}
+
+window.viewWelcome = viewWelcome;
+window.viewHome = viewHome;
+window.viewLobby = viewLobby;
+window.viewGame = viewGame;
+window.initRouter = initRouter;
+
 // Restore theme + profile on load
 (function(){
   const saved=localStorage.getItem('songo_theme');
@@ -1407,11 +1699,16 @@ function toggleVibration(){
   document.addEventListener('DOMContentLoaded',()=>{
     applyProfileToUI();
     fillAiOpponents();
-    if(!Profile.get().setupDone) openProfile();
-    Profile.ensureSession().then(()=>{
-      applyProfileToUI();
-      if(socket&&socket.connected&&Profile.token()) socket.emit('identify', Profile.token());
-    }).catch(()=>{});
+
+    // Start router (guards and dispatches to /welcome for new players or /home for returning)
+    initRouter();
+
+    if (window.Profile) {
+      Profile.ensureSession().then(()=>{
+        applyProfileToUI();
+        if(socket&&socket.connected&&Profile.token()) socket.emit('identify', Profile.token());
+      }).catch(()=>{});
+    }
   });
 })();
 

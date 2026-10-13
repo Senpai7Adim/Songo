@@ -21,9 +21,15 @@ const io = new Server(server, {
 
 app.use(express.json({ limit: '96kb' }));
 app.use(express.static(path.join(__dirname, 'public')));
+app.use('/assests', express.static(path.join(__dirname, 'assests')));
 
 app.get(['/doc', '/doc/'], (req, res) => {
   res.sendFile(path.join(__dirname, 'public', 'Documentation', 'songo-documentation.html'));
+});
+
+// SPA client-side routes
+app.get(['/welcome', '/home', '/game', '/lobby'], (req, res) => {
+  res.sendFile(path.join(__dirname, 'public', 'index.html'));
 });
 
 function tokenFromReq(req) {

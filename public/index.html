@@ -86,9 +86,150 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
+     WELCOME SCREEN — New Player Onboarding
+     ═══════════════════════════════════════════════════════════ -->
+<script>
+  (function() {
+    try {
+      var raw = localStorage.getItem('songo_identity');
+      var isOld = raw && JSON.parse(raw).setupDone;
+      if (!isOld) {
+        document.documentElement.classList.add('is-new-player');
+      }
+    } catch(e) {}
+  })();
+</script>
+<div id="welcome-screen" class="overlay welcome-screen hidden" role="main" aria-label="Bienvenue sur Songo">
+
+  <!-- Cinematic background -->
+  <div class="wlc-bg" aria-hidden="true">
+    <div class="wlc-bg-glow wlc-bg-glow--1"></div>
+    <div class="wlc-bg-glow wlc-bg-glow--2"></div>
+    <div class="wlc-bg-grid"></div>
+    <div class="wlc-bg-vignette"></div>
+  </div>
+
+  <!-- Floating particles -->
+  <div class="wlc-particles" aria-hidden="true">
+    <span class="wlc-p p1"></span><span class="wlc-p p2"></span>
+    <span class="wlc-p p3"></span><span class="wlc-p p4"></span>
+    <span class="wlc-p p5"></span><span class="wlc-p p6"></span>
+  </div>
+
+  <!-- Card -->
+  <div class="wlc-card" role="dialog" aria-labelledby="wlc-title">
+
+    <!-- Step indicator -->
+    <div class="wlc-steps" aria-hidden="true">
+      <span class="wlc-step active" id="wlc-dot-1"></span>
+      <span class="wlc-step" id="wlc-dot-2"></span>
+      <span class="wlc-step" id="wlc-dot-3"></span>
+    </div>
+
+    <!-- ── STEP 1: Welcome ── -->
+    <div class="wlc-pane" id="wlc-step-1">
+      <div class="wlc-logo-wrap">
+        <div class="wlc-logo-ring" aria-hidden="true"></div>
+        <div class="wlc-logo-symbol" aria-hidden="true">♟</div>
+      </div>
+      <h1 class="wlc-title" id="wlc-title">Songo</h1>
+      <p class="wlc-subtitle">Le mancala camerounais millénaire,<br>réinventé pour l'ère numérique.</p>
+      <div class="wlc-features">
+        <div class="wlc-feature">
+          <span class="wlc-feature-icon">🤖</span>
+          <span>Solo contre l'IA</span>
+        </div>
+        <div class="wlc-feature">
+          <span class="wlc-feature-icon">🌐</span>
+          <span>Multijoueur en ligne</span>
+        </div>
+        <div class="wlc-feature">
+          <span class="wlc-feature-icon">👑</span>
+          <span>Classement ELO</span>
+        </div>
+      </div>
+      <button class="wlc-btn-primary" id="wlc-btn-start" onclick="wlcNext(1)">
+        Commencer l'aventure →
+      </button>
+      <p class="wlc-hint">Rejoignez des milliers de joueurs africains</p>
+    </div>
+
+    <!-- ── STEP 2: Name & Avatar ── -->
+    <div class="wlc-pane hidden" id="wlc-step-2">
+      <div class="wlc-step-header">
+        <div class="wlc-step-num">01</div>
+        <h2 class="wlc-step-title">Choisissez votre identité</h2>
+        <p class="wlc-step-desc">Votre nom et avatar vous représenteront sur le tableau des scores.</p>
+      </div>
+
+      <!-- Name input -->
+      <div class="wlc-field">
+        <label class="wlc-label" for="wlc-name">Votre pseudonyme</label>
+        <input
+          id="wlc-name"
+          class="wlc-input"
+          type="text"
+          placeholder="Ex: Njoya le Grand…"
+          maxlength="16"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <span class="wlc-input-hint">Max 16 caractères</span>
+      </div>
+
+      <!-- Avatar grid -->
+      <div class="wlc-field">
+        <label class="wlc-label">Votre avatar</label>
+        <div class="wlc-avatar-grid" id="wlc-avatar-grid"></div>
+      </div>
+
+      <div class="wlc-row">
+        <button class="wlc-btn-ghost" onclick="wlcPrev(2)">← Retour</button>
+        <button class="wlc-btn-primary" onclick="wlcNext(2)">Suivant →</button>
+      </div>
+    </div>
+
+    <!-- ── STEP 3: Country & Confirm ── -->
+    <div class="wlc-pane hidden" id="wlc-step-3">
+      <div class="wlc-step-header">
+        <div class="wlc-step-num">02</div>
+        <h2 class="wlc-step-title">Votre origine</h2>
+        <p class="wlc-step-desc">D'où venez-vous ? Votre drapeau apparaîtra à côté de votre nom.</p>
+      </div>
+
+      <!-- Country select -->
+      <div class="wlc-field">
+        <label class="wlc-label" for="wlc-country">Pays / Région</label>
+        <select id="wlc-country" class="wlc-select"></select>
+      </div>
+
+      <!-- Preview card -->
+      <div class="wlc-preview" id="wlc-preview">
+        <div class="wlc-preview-av" id="wlc-preview-av">👤</div>
+        <div class="wlc-preview-info">
+          <div class="wlc-preview-name" id="wlc-preview-name">Votre nom</div>
+          <div class="wlc-preview-meta">
+            <span id="wlc-preview-flag">🇨🇲</span>
+            <span class="wlc-preview-elo">ELO 1200 · Débutant</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="wlc-row">
+        <button class="wlc-btn-ghost" onclick="wlcPrev(3)">← Retour</button>
+        <button class="wlc-btn-primary" id="wlc-btn-launch" onclick="wlcFinish()">
+          🚀 Jouer maintenant
+        </button>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
      MAIN MENU — Full-Page Hero Home
      ═══════════════════════════════════════════════════════════ -->
-<div id="menu" class="overlay home-screen" role="main" aria-label="Menu principal">
+<div id="menu" class="overlay home-screen hidden" role="main" aria-label="Menu principal">
 
   <!-- Animated background layers -->
   <div class="home-bg-layers" aria-hidden="true">
@@ -612,11 +753,15 @@
 
 <!-- ── Resign confirm box (injected dynamically by JS) ─────── -->
 
+<!-- Scroll animation canvas (loads first so canvas is ready) -->
+<script src="scroll-animation.js"></script>
+
 <!-- Scripts -->
 <script src="/socket.io/socket.io.js"></script>
 <script src="sounds.js"></script>
 <script src="animations.js"></script>
 <script src="profile.js"></script>
+<script src="router.js"></script>
 <script src="script.js"></script>
 
 </body>
