@@ -64,16 +64,24 @@ Pendant la pause, aucun coup n'est possible.
 |----------|--------|
 | `NODE_ENV` | `production` |
 | `PORT` | défini automatiquement par Render |
+| `MONGODB_URI` | URI de connexion MongoDB Atlas / Mongoose |
+| `MONGODB_DB` | Nom de la base de données (défaut : `songo`) |
 
 ## Structure du projet
 
 ```
 Songo/
+├── db.js              # Module de base de données Mongoose & logique métier
+├── models/            # Modèles Mongoose
+│   ├── Player.js      # Schéma des profils et statistiques joueurs
+│   ├── Match.js       # Schéma de l'historique des matchs
+│   └── index.js
 ├── server.js          # Serveur Express + Socket.io
 ├── package.json
 ├── render.yaml        # Config Render
 ├── public/
 │   ├── index.html     # Jeu (interface + logique client)
+│   ├── profile.js     # Gestion de session et profil client
 │   └── rules.txt      # Contenu des règles (chargé via AJAX)
 └── README.md
 ```
@@ -92,6 +100,7 @@ Songo/
 
 - **Frontend :** HTML, CSS, JavaScript
 - **Backend :** Node.js, Express, Socket.io
+- **Base de données :** MongoDB Atlas & Mongoose
 - **Hébergement :** Render (gratuit)
 
 ## Licence
