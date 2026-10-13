@@ -27,6 +27,8 @@ let _vibrateEnabled = localStorage.getItem('songo_vibrate') !== 'false';
 window._vibrateEnabled = _vibrateEnabled;
 let _animSpeed   = localStorage.getItem('songo_anim') || 'normal';
 let _drawPending = false;
+let _matchRecorded = false;
+let _selectedAvatar = '👤';
 
 // Speed multiplier for animations
 const SPEED_MAP = { fast: 0.55, normal: 1.0, slow: 1.7 };
@@ -64,12 +66,12 @@ function startTimers() {
   }, 1000);
 }
 function handleTimeOut(lostP) {
-  stopTimers(); over=true; rendAll();
+  stopTimers();
+  if(_matchRecorded) return;
+  over=true; rendAll();
   const y=B[P1S], a=B[P2S];
-  const msg=lostP===1?'Temps écoulé (Vous)':'Temps écoulé (Ordinateur)';
-  const res=lostP===1?'loss':'win';
-  if(res==='win')snd('victory'); else snd('defeat');
-  Animations.showEndModal(res, msg, y, a, pName(1), pName(2));
+  finishGame({ result:lostP===1?'loss':'win', yourScore:y, oppScore:a, reason:'timeout' });
+  srAnnounce(lostP===1?'Temps écoulé — défaite':'Temps écoulé — victoire');
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -181,7 +183,12 @@ function aip(){ return diff===1?aiEz():diff===2?aiMd():diff===3?aiHd():aiMt(); }
 /* ══════════════════════════════════════════════════════════════
    GAME STATE HELPERS
    ══════════════════════════════════════════════════════════════ */
-function pName(p){ if(mode==='ai')return p===1?'Vous':'Ordinateur'; if(mode==='local')return'Joueur '+p; return p===myPlayer?'Vous':'Adversaire'; }
+function pName(p){
+  const me=Profile.displayName();
+  if(mode==='ai') return p===1?me:Profile.aiOpponent(diff).name;
+  if(mode==='local') return p===1?me:'Joueur 2';
+  return p===myPlayer?me:'Adversaire';
+}
 function canPlay(p){ if(over||busy||gamePaused)return false; if(mode==='ai')return p===1&&turn===1; if(mode==='local')return turn===p; if(mode==='online')return turn===p&&p===myPlayer; return false; }
 
 /* ══════════════════════════════════════════════════════════════
@@ -324,46 +331,108 @@ async function runAI(){
 /* ══════════════════════════════════════════════════════════════
    END GAME
    ══════════════════════════════════════════════════════════════ */
+function finishGame({ result, yourScore, oppScore, reason, silent, fromServer, rec }) {
+  if(_matchRecorded) return null;
+  if(mode==='online'&&!fromServer){
+    over=true; stopTimers(); setGameActionBtns(false);
+    return null;
+  }
+  if(mode==='online'&&roomCode&&sessionStorage.getItem('songo_rec_'+roomCode)){
+    _matchRecorded=true; return null;
+  }
+  over=true;
+  stopTimers();
+  const opp=Profile.opponentMeta(mode, diff);
+  let record=rec;
+  if(fromServer){
+    if(record&&record.player) Profile.applySnapshot(record.player);
+    if(!record) record={ eloDelta:0, newElo:Profile.get().elo, rated:true };
+  } else {
+    const payload={
+      mode,
+      result,
+      yourScore,
+      oppScore,
+      oppName: mode==='ai' ? (opp.name+' · '+opp.title) : opp.name,
+      oppAvatar: opp.avatar,
+      rated: mode==='ai',
+      oppElo: opp.elo,
+      aiDiff: mode==='ai'?diff:null,
+      timeControl: (mode==='ai'&&aiConfig.time)?(aiConfig.time+' min'):'∞',
+      reason: reason||'normal'
+    };
+    record=Profile.recordMatch(payload);
+    Profile.postMatch(payload).then(data=>{
+      if(!data||!data.player) return;
+      Profile.applySnapshot(data.player, data.matches);
+      applyProfileToUI();
+      const deltaEl=document.getElementById('end-elo-delta');
+      const newEl=document.getElementById('end-elo-new');
+      if(deltaEl&&data.eloDelta!==undefined){
+        const d=data.eloDelta|0;
+        deltaEl.textContent=(d>0?'+':'')+d;
+        deltaEl.className='end-elo-delta '+(d>0?'up':d<0?'down':'flat');
+      }
+      if(newEl&&data.newElo!=null) newEl.textContent=String(data.newElo);
+    });
+  }
+  _matchRecorded=true;
+  if(mode==='online'&&roomCode) sessionStorage.setItem('songo_rec_'+roomCode,'1');
+  applyProfileToUI();
+  if(silent) return record;
+  if(result==='win') snd('victory');
+  else if(result==='loss') snd('defeat');
+  else snd('draw');
+  if(result==='win') Animations.vibrate([100,50,100,50,200]);
+  else if(result==='loss') Animations.vibrate([200]);
+  Animations.showEndModal({
+    result,
+    yourScore,
+    oppScore,
+    yourName: Profile.displayName(),
+    oppName: opp.name,
+    eloDelta: record.eloDelta,
+    newElo: record.newElo,
+    rated: record.rated
+  });
+  setInf('Partie terminée');
+  setGameActionBtns(false);
+  return record;
+}
+
 function chkEnd(scores){
   const s1=P1.reduce((a,i)=>a+B[i],0), s2=P2.reduce((a,i)=>a+B[i],0);
   if(!s1||!s2){
+    if(_matchRecorded){ over=true; rendAll(); return; }
     if(!scores){ P1.forEach(i=>{B[P1S]+=B[i];B[i]=0;}); P2.forEach(i=>{B[P2S]+=B[i];B[i]=0;}); }
     over=true; rendAll();
     const y=B[P1S], a=B[P2S];
-
-    let result, msg;
     const yourScore = mode==='online'&&myPlayer===2 ? a : y;
     const oppScore  = mode==='online'&&myPlayer===2 ? y : a;
-    const yourName  = pName(myPlayer||1);
-    const oppName   = pName(myPlayer===1?2:1);
 
+    let result, msg;
     if(mode==='ai'){
-      if(y>a)       { result='win';  msg='🏆 Vous gagnez !'; snd('victory'); }
-      else if(a>y)  { result='loss'; msg='Ordinateur gagne'; snd('defeat'); }
-      else          { result='draw'; msg='🤝 Égalité !'; snd('draw'); }
+      if(y>a)       { result='win';  msg='🏆 Vous gagnez !'; }
+      else if(a>y)  { result='loss'; msg=Profile.aiOpponent(diff).name+' gagne'; }
+      else          { result='draw'; msg='🤝 Égalité !'; }
     } else if(mode==='local'){
-      if(y>a)       { result='win';  msg='🏆 Joueur 1 gagne !'; snd('victory'); }
-      else if(a>y)  { result='win';  msg='🏆 Joueur 2 gagne !'; snd('victory'); }
-      else          { result='draw'; msg='🤝 Égalité !'; snd('draw'); }
+      if(y>a)       { result='win';  msg='🏆 '+Profile.displayName()+' gagne !'; }
+      else if(a>y)  { result='loss'; msg='🏆 Joueur 2 gagne !'; }
+      else          { result='draw'; msg='🤝 Égalité !'; }
     } else {
-      const mine=myPlayer===1?y:a, theirs=myPlayer===1?a:y;
-      if(mine>theirs)   { result='win';  msg='🏆 Vous gagnez !'; snd('victory'); }
-      else if(theirs>mine){ result='loss';msg='Adversaire gagne'; snd('defeat'); }
-      else              { result='draw'; msg='🤝 Égalité !'; snd('draw'); }
+      if(yourScore>oppScore)    { result='win';  msg='🏆 Vous gagnez !'; }
+      else if(oppScore>yourScore){ result='loss';msg='Adversaire gagne'; }
+      else                      { result='draw'; msg='🤝 Égalité !'; }
     }
 
-    // Show rich modal
-    Animations.showEndModal({ result, yourScore, oppScore, yourName, oppName });
-    setInf('Partie terminée');
+    if(mode==='online'){
+      over=true; rendAll(); setGameActionBtns(false);
+      srAnnounce(msg);
+      return;
+    }
+    finishGame({ result, yourScore, oppScore, reason:'normal' });
     srAnnounce(msg);
     _undoStack=[];
-
-    // Show vibration feedback
-    if(result==='win')   Animations.vibrate([100,50,100,50,200]);
-    else if(result==='loss') Animations.vibrate([200]);
-
-    // Hide resign/draw buttons
-    setGameActionBtns(false);
   }
 }
 
@@ -434,26 +503,40 @@ function rendAll(){
 }
 
 function updateLabels(){
+  const me=Profile.get();
+  const myName=Profile.displayName();
+  document.getElementById('av-yo').textContent=me.avatar;
+  document.getElementById('flag-yo').textContent=me.flag;
+  document.getElementById('elo-yo').textContent=String(me.elo);
+  document.getElementById('lb-yo').textContent=myName;
+
   if(mode==='ai'){
-    document.getElementById('lb-yo').textContent='Vous';
-    document.getElementById('lb-ai').textContent='Ordinateur';
+    const opp=Profile.aiOpponent(diff);
+    document.getElementById('lb-ai').textContent=opp.name;
     document.getElementById('slb-yo').textContent='VOUS';
-    document.getElementById('slb-ai').textContent='ORDI';
-    document.getElementById('av-ai').textContent='🤖';
-    document.getElementById('av-yo').textContent='👤';
+    document.getElementById('slb-ai').textContent=opp.title.toUpperCase().slice(0,6);
+    document.getElementById('av-ai').textContent=opp.avatar;
+    document.getElementById('flag-ai').textContent=opp.flag;
+    document.getElementById('elo-ai').textContent=String(opp.elo);
     document.getElementById('dot-ai').className='status-dot';
+    const diffTag=document.getElementById('diff-tag');
+    if(diffTag){ diffTag.textContent=opp.title; diffTag.style.display=''; }
   } else if(mode==='local'){
-    document.getElementById('lb-yo').textContent='Joueur 1';
     document.getElementById('lb-ai').textContent='Joueur 2';
     document.getElementById('slb-yo').textContent='J1';
     document.getElementById('slb-ai').textContent='J2';
     document.getElementById('av-ai').textContent='👥';
+    document.getElementById('flag-ai').textContent='🇨🇲';
+    document.getElementById('elo-ai').textContent='—';
     document.getElementById('dot-ai').className='status-dot';
   } else {
-    document.getElementById('lb-yo').textContent='Vous';
-    document.getElementById('lb-ai').textContent='Adversaire';
+    const opp=Profile.opponentMeta('online');
+    document.getElementById('lb-ai').textContent=opp.name;
     document.getElementById('slb-yo').textContent='VOUS';
     document.getElementById('slb-ai').textContent='ADV';
+    document.getElementById('av-ai').textContent=opp.avatar;
+    document.getElementById('flag-ai').textContent=opp.flag;
+    document.getElementById('elo-ai').textContent=String(opp.elo);
     document.getElementById('dot-yo').className='status-dot online';
   }
 }
@@ -507,6 +590,7 @@ function showGame(){
   document.getElementById('em').style.display='none';
   document.getElementById('history-list').innerHTML='';
   _undoStack=[];
+  _matchRecorded=false;
   updateLabels();
   setGameActionBtns(true);
   if(mode==='online'){
@@ -521,13 +605,17 @@ function showGame(){
    NEW GAME / REMATCH
    ══════════════════════════════════════════════════════════════ */
 function ng(){
-  if(mode==='online'&&socket&&roomCode){lastMoveSeq=-1;socket.emit('rematch');Animations.hideEndModal();return;}
+  if(mode==='online'&&socket&&roomCode){
+    lastMoveSeq=-1; _matchRecorded=false;
+    sessionStorage.removeItem('songo_rec_'+roomCode);
+    socket.emit('rematch'); Animations.hideEndModal(); return;
+  }
   init(); turn=1;
   if(mode==='ai'){
     if(aiConfig.start==='ai') turn=2;
     else if(aiConfig.start==='random') turn=Math.random()<0.5?1:2;
   }
-  over=false; busy=false; lastMoveSeq=-1; _undoStack=[];
+  over=false; busy=false; lastMoveSeq=-1; _undoStack=[]; _matchRecorded=false;
   Animations.hideEndModal();
   document.getElementById('em').style.display='none';
   document.getElementById('em').textContent='';
@@ -575,11 +663,31 @@ function doResign(){
    DRAW REQUEST (UI only — server ignores gracefully)
    ══════════════════════════════════════════════════════════════ */
 function requestDraw(){
-  if(over||_drawPending)return;
+  if(over||_drawPending||mode!=='online'||!socket)return;
   _drawPending=true;
-  toast('Proposition de nulle envoyée','warn');
-  // Reset after 20s if not responded
+  socket.emit('draw_offer',res=>{
+    if(!res||!res.ok){ _drawPending=false; toast(res&&res.error?res.error:'Impossible de proposer nulle','warn'); return; }
+    if(res.accepted) return;
+    toast('Proposition de nulle envoyée','warn');
+  });
   setTimeout(()=>{_drawPending=false;},20000);
+}
+
+function showDrawOffer(){
+  let box=document.getElementById('draw-confirm');
+  if(box) box.remove();
+  box=document.createElement('div');
+  box.id='draw-confirm'; box.className='confirm-box';
+  box.innerHTML='<h4>L\'adversaire propose nulle</h4><div class="confirm-btns">'
+    +'<button class="btn primary-btn" onclick="respondDraw(true)">Accepter</button>'
+    +'<button class="btn ghost-btn" onclick="respondDraw(false)">Refuser</button></div>';
+  document.body.appendChild(box);
+}
+
+function respondDraw(accept){
+  const box=document.getElementById('draw-confirm'); if(box)box.remove();
+  _drawPending=false;
+  if(socket) socket.emit('draw_respond', !!accept);
 }
 
 /* ══════════════════════════════════════════════════════════════
@@ -698,13 +806,15 @@ function getSocket(){
       reconnection:true,
       reconnectionAttempts:30,
       reconnectionDelay:1000,
-      timeout:10000
+      timeout:10000,
+      auth:{ token: Profile.token() }
     });
     socket.on('connect',()=>{
       updateConnStatus();
       setNetIndicator('ok');
       measurePing();
       snd('reconnect');
+      if(Profile.token()) socket.emit('identify', Profile.token());
       if(roomCode&&myPlayer) rejoinOnline();
     });
     socket.on('disconnect',()=>{
@@ -780,10 +890,6 @@ function selectSetupOpt(category, value, el) {
 function launchAIGame() {
   snd('click');
   diff = aiConfig.diff;
-  // Show difficulty on the opponent card
-  const diffLabels = {1:'😊 Débutant', 2:'🧠 Intermédiaire', 3:'🔥 Expert', 4:'👑 Maître'};
-  const diffTag = document.getElementById('diff-tag');
-  if(diffTag){ diffTag.textContent = diffLabels[diff] || ''; diffTag.style.display = ''; }
   document.getElementById('ai-setup').classList.add('hidden');
   showGame();
 }
@@ -802,6 +908,7 @@ function backToMenu(){
   over=true; busy=false;
   setNetIndicator('ok');
   if(mode!=='online') document.getElementById('net-indicator').classList.add('hidden');
+  applyProfileToUI();
 }
 
 function createRoom(){
@@ -872,11 +979,13 @@ function legacyCopy(txt){
    ══════════════════════════════════════════════════════════════ */
 function handleOpponentLeft(data){
   hidePauseBanner(); clearSession();
-  over=true; busy=false; pendingState=null;
+  const game=document.getElementById('game');
+  const inGame=game&&!game.classList.contains('hidden');
   const reason=data&&data.reason;
   const msg=reason==='left'?'L\'adversaire a quitté la partie.':reason==='timeout'?'L\'adversaire n\'est pas revenu à temps.':'Adversaire déconnecté.';
-  Animations.showEndModal({ result:'win', yourScore:B[myPlayer===1?P1S:P2S], oppScore:B[myPlayer===1?P2S:P1S], yourName:'Vous', oppName:'Adversaire' });
-  setInf('Partie terminée'); rend();
+  if(!inGame) return;
+  over=true; busy=false; pendingState=null;
+  rend();
   document.getElementById('em').textContent=msg; document.getElementById('em').style.display='block';
 }
 
@@ -891,6 +1000,10 @@ function tryStartOnlineGame(st){
 
 function applyState(st){
   if(!st)return;
+  if(st.profiles){
+    const oppSlot=myPlayer===2?1:2;
+    Profile.setOnlineOpponent(st.profiles[oppSlot]||null);
+  }
   B=(st.board||st.B||[]).slice();
   turn=st.currentPlayer||st.turn||1;
   over=!!st.over;
@@ -898,7 +1011,12 @@ function applyState(st){
   if(st.moveSeq!==undefined)lastMoveSeq=st.moveSeq;
   if(st.paused&&st.graceEndsAt)showPauseBanner(st.graceEndsAt,st.disconnectedSlot);
   else if(!st.paused)hidePauseBanner();
-  if(!over){ Animations.hideEndModal(); document.getElementById('em').style.display='none'; document.getElementById('em').textContent=''; }
+  if(!over){
+    _matchRecorded=false;
+    Animations.hideEndModal(); document.getElementById('em').style.display='none'; document.getElementById('em').textContent='';
+  } else if(roomCode&&sessionStorage.getItem('songo_rec_'+roomCode)){
+    _matchRecorded=true;
+  }
   busy=false; rend();
   if(over&&st.scores){B[P1S]=st.scores.p1;B[P2S]=st.scores.p2;chkEnd(st.scores);}
   else if(!over)setTurnInf();
@@ -962,7 +1080,30 @@ function listenOnline(){
     socket.on('player_disconnected',d=>{ if(d&&d.graceEndsAt)showPauseBanner(d.graceEndsAt,d.slot); else{gamePaused=true;rend();} });
     socket.on('player_rejoined',()=>{ hidePauseBanner(); snd('reconnect'); toast('Adversaire de retour — la partie reprend !','success'); setTurnInf(); });
     socket.on('opponent_left',data=>handleOpponentLeft(data));
-    // Expose ping endpoint (server responds via ack)
+    socket.on('match_result',data=>{
+      if(!data||!data.bySlot) return;
+      const mine=data.bySlot[myPlayer];
+      if(!mine) return;
+      const y=mine.match?mine.match.yourScore:(myPlayer===1?B[P1S]:B[P2S]);
+      const a=mine.match?mine.match.oppScore:(myPlayer===1?B[P2S]:B[P1S]);
+      finishGame({
+        result: mine.result,
+        yourScore: y,
+        oppScore: a,
+        reason: data.reason||'normal',
+        fromServer: true,
+        rec: mine
+      });
+    });
+    socket.on('draw_offered',d=>{
+      if(!d||d.slot===myPlayer) return;
+      showDrawOffer();
+    });
+    socket.on('draw_declined',()=>{
+      _drawPending=false;
+      const box=document.getElementById('draw-confirm'); if(box)box.remove();
+      toast('Nulle refusée','warn');
+    });
     socket.on('pong_check',()=>{});
   }
 }
@@ -989,6 +1130,218 @@ function rejoinOnline(){
     if(s.code&&s.player){ roomCode=s.code; myPlayer=s.player; mode='online'; window.addEventListener('load',()=>getSocket()); }
   }catch(e){clearSession();}
 })();
+
+/* ══════════════════════════════════════════════════════════════
+   PROFILE / STATS UI
+   ══════════════════════════════════════════════════════════════ */
+function fillAiOpponents(){
+  const grid=document.getElementById('ai-opp-grid');
+  if(!grid||!window.Profile) return;
+  grid.innerHTML='';
+  [1,2,3,4].forEach(d=>{
+    const opp=Profile.aiOpponent(d);
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='btn ghost-btn setup-opt diff-opt'+(aiConfig.diff===d?' active':'');
+    b.style.justifyContent='flex-start';
+    b.style.flexDirection='column';
+    b.style.alignItems='flex-start';
+    b.style.gap='2px';
+    b.onclick=function(){ selectSetupOpt('diff', d, this); };
+    b.innerHTML='<span>'+opp.avatar+' '+Profile.esc(opp.name)+'</span><span style="font-size:0.72rem;color:var(--text-muted);font-weight:500">'+Profile.esc(opp.title)+' · '+opp.elo+'</span>';
+    grid.appendChild(b);
+  });
+}
+
+function applyProfileToUI(){
+  const p=Profile.get();
+  const name=Profile.displayName();
+  const setTxt=(id,v)=>{ const el=document.getElementById(id); if(el) el.textContent=v; };
+  setTxt('menu-av', p.avatar);
+  setTxt('menu-name', name);
+  setTxt('menu-flag', p.flag);
+  setTxt('menu-elo', String(p.elo));
+  setTxt('menu-record', p.stats.wins+'V – '+p.stats.losses+'D – '+p.stats.draws+'N');
+  setTxt('av-yo', p.avatar);
+  setTxt('flag-yo', p.flag);
+  setTxt('elo-yo', String(p.elo));
+  const lb=document.getElementById('lb-yo');
+  const game=document.getElementById('game');
+  if(lb&&game&&!game.classList.contains('hidden')) lb.textContent=name;
+}
+
+function fillAvatarGrid(){
+  const grid=document.getElementById('avatar-grid');
+  if(!grid) return;
+  grid.innerHTML='';
+  Profile.AVATARS.forEach(av=>{
+    const b=document.createElement('button');
+    b.type='button';
+    b.className='avatar-opt'+(_selectedAvatar===av?' selected':'');
+    b.textContent=av;
+    b.setAttribute('role','option');
+    b.setAttribute('aria-selected', _selectedAvatar===av?'true':'false');
+    b.onclick=()=>{
+      _selectedAvatar=av;
+      grid.querySelectorAll('.avatar-opt').forEach(x=>{
+        x.classList.remove('selected');
+        x.setAttribute('aria-selected','false');
+      });
+      b.classList.add('selected');
+      b.setAttribute('aria-selected','true');
+    };
+    grid.appendChild(b);
+  });
+}
+
+function fillCountrySelect(current){
+  const sel=document.getElementById('profile-country');
+  if(!sel) return;
+  sel.innerHTML='';
+  Profile.COUNTRIES.forEach(c=>{
+    const o=document.createElement('option');
+    o.value=c.code;
+    o.textContent=c.emoji+'  '+c.name;
+    if(c.code===current) o.selected=true;
+    sel.appendChild(o);
+  });
+}
+
+function openProfile(){
+  const p=Profile.get();
+  _selectedAvatar=p.avatar;
+  const title=document.getElementById('profile-title');
+  const intro=document.getElementById('profile-intro');
+  const skip=document.getElementById('profile-skip');
+  if(title) title.textContent=p.setupDone?'Votre profil':'Bienvenue';
+  if(intro) intro.classList.toggle('hidden', !!p.setupDone);
+  if(skip) skip.style.display=p.setupDone?'none':'';
+  const nameEl=document.getElementById('profile-name');
+  if(nameEl) nameEl.value=p.name;
+  fillAvatarGrid();
+  fillCountrySelect(p.country);
+  document.getElementById('profile-overlay').classList.remove('hidden');
+  if(nameEl) setTimeout(()=>nameEl.focus(), 50);
+}
+
+function closeProfile(){
+  const el=document.getElementById('profile-overlay');
+  if(el) el.classList.add('hidden');
+}
+
+function skipProfile(){
+  Profile.updateProfile({ name: Profile.get().name || '' });
+  applyProfileToUI();
+  closeProfile();
+}
+
+function saveProfile(){
+  const nameEl=document.getElementById('profile-name');
+  const countryEl=document.getElementById('profile-country');
+  Profile.updateProfile({
+    name: nameEl?nameEl.value:'',
+    avatar: _selectedAvatar,
+    country: countryEl?countryEl.value:'CM'
+  });
+  applyProfileToUI();
+  closeProfile();
+  toast('Profil enregistré','success');
+  snd('click');
+}
+
+function openHistory(){
+  const p=Profile.get();
+  const s=p.stats;
+  const grid=document.getElementById('stats-grid');
+  const rated=s.wins+s.losses+s.draws;
+  const wr=Profile.winRate();
+  const streakLbl=s.streak>0?s.streak+' victoires':s.streak<0?Math.abs(s.streak)+' défaites':'—';
+  if(grid){
+    const cells=[
+      [p.elo,'ELO actuel'],
+      [p.eloPeak,'Meilleur ELO'],
+      [s.wins+' – '+s.losses+' – '+s.draws,'V – D – N'],
+      [(rated?wr+' %':'—'),'Taux de victoire'],
+      [s.games,'Parties jouées'],
+      [s.bestStreak||'—','Meilleure série']
+    ];
+    grid.innerHTML=cells.map(c=>'<div class="stat-card"><div class="stat-val">'+c[0]+'</div><div class="stat-lbl">'+c[1]+'</div></div>').join('');
+  }
+  const aiBox=document.getElementById('ai-stats');
+  if(aiBox){
+    aiBox.innerHTML=[1,2,3,4].map(d=>{
+      const opp=Profile.aiOpponent(d);
+      const b=s.byAi[d];
+      return '<div class="ai-stats-row"><span>'+opp.avatar+' '+Profile.esc(opp.name)+' · '+opp.title+'</span><span>'+b.w+'V – '+b.l+'D – '+b.d+'N</span></div>';
+    }).join('')+'<div class="ai-stats-row"><span>🌐 En ligne</span><span>'+s.online.w+'V – '+s.online.l+'D – '+s.online.d+'N</span></div>'
+     +'<div class="ai-stats-row"><span>👥 Local (non classé)</span><span>'+s.local.games+' parties</span></div>'
+     +'<div class="ai-stats-row"><span>Série en cours</span><span>'+streakLbl+'</span></div>';
+  }
+  const list=document.getElementById('match-list');
+  const empty=document.getElementById('match-empty');
+  if(list){
+    list.innerHTML='';
+    p.matches.forEach(m=>{
+      const card=document.createElement('div');
+      card.className='match-card '+m.result;
+      const delta=m.rated?('<div class="match-elo-d '+(m.eloDelta>0?'up':m.eloDelta<0?'down':'flat')+'">'+(m.eloDelta>0?'+':'')+m.eloDelta+'</div>'):'';
+      card.innerHTML=
+        '<div class="match-players">'
+        +'<div class="match-player">'+Profile.esc(Profile.displayName())+'</div>'
+        +'<div class="match-vs">vs</div>'
+        +'<div class="match-player">'+Profile.esc(m.oppName)+'</div>'
+        +'</div>'
+        +'<div class="match-result"><div class="match-score">'+m.yourScore+' – '+m.oppScore+'</div>'
+        +'<div class="match-outcome">'+Profile.outcomeLabel(m.result)+'</div></div>'
+        +'<div class="match-meta"><div class="match-mode">'+Profile.modeLabel(m.mode,m.aiDiff)
+        +(m.timeControl&&m.timeControl!=='∞'?' · '+m.timeControl:'')+'</div>'
+        +'<div class="match-date">'+Profile.formatRelative(m.ts)+'</div>'+delta+'</div>';
+      list.appendChild(card);
+    });
+  }
+  if(empty) empty.style.display=p.matches.length?'none':'block';
+  renderLeaderboard(null);
+  document.getElementById('history-overlay').classList.remove('hidden');
+  Profile.fetchLeaderboard().then(renderLeaderboard);
+}
+
+function renderLeaderboard(board){
+  const box=document.getElementById('leaderboard-list');
+  if(!box) return;
+  if(!board){
+    box.innerHTML='<p class="profile-intro">Chargement du classement…</p>';
+    return;
+  }
+  const list=board.list||[];
+  const me=board.me;
+  if(!list.length){
+    box.innerHTML='<p class="profile-intro">Le classement se remplit après les premières parties enregistrées sur le serveur.</p>';
+    return;
+  }
+  box.innerHTML=list.map(r=>{
+    const you=me&&r.id===me.id;
+    return '<div class="leaderboard-row'+(you?' me':'')+'">'
+      +'<span class="lb-rank">'+(r.rank===1?'🥇':r.rank===2?'🥈':r.rank===3?'🥉':r.rank)+'</span>'
+      +'<span class="lb-av">'+r.avatar+'</span>'
+      +'<span class="lb-name">'+Profile.esc(r.name)+' '+(r.flag||'')+(you?' <em>vous</em>':'')+'</span>'
+      +'<span class="lb-wr">'+r.winRate+'%</span>'
+      +'<span class="lb-elo">'+r.elo+'</span>'
+      +'</div>';
+  }).join('');
+}
+
+function closeHistory(){
+  const el=document.getElementById('history-overlay');
+  if(el) el.classList.add('hidden');
+}
+
+window.openProfile=openProfile;
+window.closeProfile=closeProfile;
+window.saveProfile=saveProfile;
+window.skipProfile=skipProfile;
+window.openHistory=openHistory;
+window.closeHistory=closeHistory;
+window.respondDraw=respondDraw;
 
 /* ══════════════════════════════════════════════════════════════
    SETTINGS PANEL
@@ -1047,10 +1400,19 @@ function toggleVibration(){
   localStorage.setItem('songo_vibrate',_vibrateEnabled.toString());
 }
 
-// Restore theme on load
+// Restore theme + profile on load
 (function(){
   const saved=localStorage.getItem('songo_theme');
   if(saved) document.documentElement.setAttribute('data-theme',saved);
+  document.addEventListener('DOMContentLoaded',()=>{
+    applyProfileToUI();
+    fillAiOpponents();
+    if(!Profile.get().setupDone) openProfile();
+    Profile.ensureSession().then(()=>{
+      applyProfileToUI();
+      if(socket&&socket.connected&&Profile.token()) socket.emit('identify', Profile.token());
+    }).catch(()=>{});
+  });
 })();
 
 /* ══════════════════════════════════════════════════════════════
@@ -1059,8 +1421,12 @@ function toggleVibration(){
 document.addEventListener('keydown',(e)=>{
   if(e.key==='Escape'){
     closeSettings();
+    closeProfile();
+    closeHistory();
     const resignBox=document.getElementById('resign-confirm');
     if(resignBox)resignBox.remove();
+    const drawBox=document.getElementById('draw-confirm');
+    if(drawBox)drawBox.remove();
   }
   // Tab through pits is handled by tabindex on pit elements
   // Shortcut: 1-6 keys for your pits

@@ -73,6 +73,11 @@
         <div class="end-score-val" id="end-val-opp">0</div>
       </div>
     </div>
+    <div class="end-elo hidden" id="end-elo">
+      <span class="end-elo-delta" id="end-elo-delta">+0</span>
+      <span class="end-elo-label">ELO</span>
+      <span class="end-elo-new" id="end-elo-new">1200</span>
+    </div>
     <div class="end-actions">
       <button class="btn primary-btn" id="end-rematch-btn" onclick="ng()">↺ Revanche</button>
       <button class="btn ghost-btn" onclick="backToMenu()">← Menu principal</button>
@@ -81,45 +86,137 @@
 </div>
 
 <!-- ═══════════════════════════════════════════════════════════
-     MAIN MENU
+     MAIN MENU — Full-Page Hero Home
      ═══════════════════════════════════════════════════════════ -->
-<div id="menu" class="overlay hero-bg" role="main" aria-label="Menu principal">
-  <div class="kente-accent"></div>
-  <div class="menu-box premium-card">
-    <h1 class="logo-text">Songo</h1>
-    <div class="sub-title">Mancala Camerounais</div>
+<div id="menu" class="overlay home-screen" role="main" aria-label="Menu principal">
 
-    <nav aria-label="Modes de jeu" style="margin-top:1.75rem">
-      <button class="mode-btn" id="btn-ai" onclick="startMode('ai')" aria-label="Solo contre l'ordinateur, 3 niveaux de difficulté">
-        <span class="mode-icon" aria-hidden="true">🤖</span>
-        <div class="mode-text">
-          <span class="mode-title">Solo vs Ordinateur</span>
-          <span class="desc">3 niveaux de difficulté</span>
-        </div>
-      </button>
-      <button class="mode-btn" id="btn-local" onclick="startMode('local')" aria-label="Jeu local à 2 joueurs sur le même écran">
-        <span class="mode-icon" aria-hidden="true">👥</span>
-        <div class="mode-text">
-          <span class="mode-title">Local à 2 joueurs</span>
-          <span class="desc">Même écran, tour par tour</span>
-        </div>
-      </button>
-      <button class="mode-btn" id="btn-online" onclick="startMode('online')" aria-label="Jouer en ligne avec un ami à distance">
-        <span class="mode-icon" aria-hidden="true">🌐</span>
-        <div class="mode-text">
-          <span class="mode-title">En ligne</span>
-          <span class="desc">Jouez avec un ami à distance</span>
-        </div>
-      </button>
-    </nav>
+  <!-- Animated background layers -->
+  <div class="home-bg-layers" aria-hidden="true">
+    <div class="home-bg-image"></div>
+    <div class="home-bg-radial"></div>
+    <div class="home-bg-vignette"></div>
+    <div class="home-kente-grid"></div>
+  </div>
 
-    <div style="display: flex; gap: 10px; width: 100%; margin-top: 1rem;">
-      <button class="btn settings-btn" onclick="openSettings()" aria-label="Ouvrir les paramètres" style="flex: 1; margin-top: 0;">
-        ⚙️ Paramètres
+  <!-- Floating particles -->
+  <div class="home-particles" aria-hidden="true">
+    <span class="particle p1"></span><span class="particle p2"></span>
+    <span class="particle p3"></span><span class="particle p4"></span>
+    <span class="particle p5"></span><span class="particle p6"></span>
+    <span class="particle p7"></span><span class="particle p8"></span>
+  </div>
+
+  <!-- ── Two-column hero layout ── -->
+  <div class="home-layout">
+
+    <!-- LEFT — Branding & CTA -->
+    <div class="home-left">
+      <!-- Badge -->
+      <div class="home-badge" aria-label="Jeu traditionnel africain">
+        <span class="home-badge-dot"></span>
+        Mancala Camerounais · Édition Premium
+      </div>
+
+      <!-- Title -->
+      <h1 class="home-title">Songo</h1>
+      <p class="home-tagline">Le jeu de stratégie africain millénaire,<br>réinventé pour l'ère numérique.</p>
+
+      <!-- Player chip -->
+      <button type="button" class="profile-chip home-profile-chip" id="menu-profile" onclick="openProfile()" aria-label="Modifier le profil">
+        <span class="avatar profile-chip-av" id="menu-av" aria-hidden="true">👤</span>
+        <div class="profile-chip-info">
+          <div class="profile-chip-name" id="menu-name">Joueur</div>
+          <div class="profile-chip-meta">
+            <span id="menu-flag">🇨🇲</span>
+            <span class="elo" id="menu-elo">1200</span>
+            <span id="menu-record">0V – 0D – 0N</span>
+          </div>
+        </div>
+        <span class="profile-chip-edit" aria-hidden="true">✎</span>
       </button>
-      <a href="/doc/" class="btn settings-btn" aria-label="Ouvrir la documentation" style="flex: 1; margin-top: 0; text-decoration: none; display: flex; justify-content: center; align-items: center;">
-        📖 Manuel
-      </a>
+
+      <!-- Quick-action footer row -->
+      <div class="home-quick-actions">
+        <button class="home-qa-btn" onclick="openHistory()" aria-label="Historique">
+          <span>📜</span> Historique
+        </button>
+        <button class="home-qa-btn" onclick="openSettings()" aria-label="Paramètres">
+          <span>⚙️</span> Paramètres
+        </button>
+        <a href="/doc/" class="home-qa-btn" aria-label="Manuel">
+          <span>📖</span> Manuel
+        </a>
+      </div>
+    </div>
+
+    <!-- RIGHT — Game mode cards -->
+    <div class="home-right">
+
+      <!-- Decorative board miniature -->
+      <div class="home-board-deco" aria-hidden="true">
+        <div class="deco-store deco-store-l"></div>
+        <div class="deco-pits">
+          <div class="deco-row">
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+          </div>
+          <div class="deco-row">
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+            <div class="deco-pit"><span></span><span></span><span></span><span></span></div>
+          </div>
+        </div>
+        <div class="deco-store deco-store-r"></div>
+      </div>
+
+      <!-- Section label -->
+      <div class="home-section-label">Choisir un mode</div>
+
+      <!-- Mode cards -->
+      <nav aria-label="Modes de jeu" class="home-modes">
+
+        <button class="home-mode-card" id="btn-ai" onclick="startMode('ai')"
+          aria-label="Solo contre l'ordinateur">
+          <div class="hmc-glow hmc-glow-ai"></div>
+          <div class="hmc-icon">🤖</div>
+          <div class="hmc-body">
+            <div class="hmc-title">Solo vs Ordinateur</div>
+            <div class="hmc-desc">4 adversaires · ELO en jeu</div>
+          </div>
+          <div class="hmc-arrow">→</div>
+        </button>
+
+        <button class="home-mode-card" id="btn-local" onclick="startMode('local')"
+          aria-label="Jeu local à 2 joueurs">
+          <div class="hmc-glow hmc-glow-local"></div>
+          <div class="hmc-icon">👥</div>
+          <div class="hmc-body">
+            <div class="hmc-title">Local · 2 Joueurs</div>
+            <div class="hmc-desc">Même écran · Tour par tour</div>
+          </div>
+          <div class="hmc-arrow">→</div>
+        </button>
+
+        <button class="home-mode-card home-mode-card--featured" id="btn-online" onclick="startMode('online')"
+          aria-label="Jouer en ligne">
+          <div class="hmc-glow hmc-glow-online"></div>
+          <div class="hmc-badge-online">En direct</div>
+          <div class="hmc-icon">🌐</div>
+          <div class="hmc-body">
+            <div class="hmc-title">En Ligne</div>
+            <div class="hmc-desc">Défiez un ami à distance</div>
+          </div>
+          <div class="hmc-arrow">→</div>
+        </button>
+
+      </nav>
     </div>
   </div>
 </div>
@@ -141,11 +238,11 @@
     <!-- Adversary -->
     <div style="margin-bottom: 1.5rem;">
       <div style="font-size: 0.75rem; text-transform: uppercase; letter-spacing: 1px; color: var(--text-muted); margin-bottom: 0.75rem; border-bottom: 1px solid var(--border-subtle); padding-bottom: 0.5rem; font-weight: 600;">Choisissez votre adversaire</div>
-      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
-        <button class="btn ghost-btn setup-opt diff-opt active" onclick="selectSetupOpt('diff', 1, this)" style="justify-content: flex-start;">😊 Débutant</button>
-        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 2, this)" style="justify-content: flex-start;">🧠 Intermédiaire</button>
-        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 3, this)" style="justify-content: flex-start;">🔥 Expert</button>
-        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 4, this)" style="justify-content: flex-start;">👑 Maître</button>
+      <div id="ai-opp-grid" style="display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem;">
+        <button class="btn ghost-btn setup-opt diff-opt active" onclick="selectSetupOpt('diff', 1, this)" style="justify-content: flex-start;">😊 Kossi · 800</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 2, this)" style="justify-content: flex-start;">🧠 Mireille · 1100</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 3, this)" style="justify-content: flex-start;">🔥 Njoya · 1400</button>
+        <button class="btn ghost-btn setup-opt diff-opt" onclick="selectSetupOpt('diff', 4, this)" style="justify-content: flex-start;">👑 Sultan · 1700</button>
       </div>
     </div>
 
@@ -308,6 +405,14 @@
       </label>
     </div>
 
+    <div class="settings-section-label">Profil</div>
+    <button class="btn settings-btn" onclick="closeSettings();openProfile()" style="margin-top:0;width:100%">
+      ✎ Modifier le profil
+    </button>
+    <button class="btn settings-btn" onclick="closeSettings();openHistory()" style="margin-top:8px;width:100%">
+      📜 Historique et stats
+    </button>
+
     <!-- Info -->
     <div class="settings-section-label">À propos</div>
     <div class="setting-item" style="flex-direction:column;align-items:flex-start;gap:4px">
@@ -319,6 +424,55 @@
 </div>
 <!-- Settings backdrop -->
 <div id="settings-backdrop" style="display:none;position:fixed;inset:0;z-index:599;background:rgba(13,10,5,0.5);backdrop-filter:blur(2px)" onclick="closeSettings()"></div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     PROFILE EDITOR
+     ═══════════════════════════════════════════════════════════ -->
+<div id="profile-overlay" class="overlay hidden hero-bg" role="dialog" aria-modal="true" aria-labelledby="profile-title">
+  <div class="kente-accent"></div>
+  <div class="menu-box premium-card profile-editor">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;text-align:left">
+      <button type="button" class="icon-btn" onclick="(Profile.get().setupDone?closeProfile():skipProfile())" aria-label="Fermer">✕</button>
+      <h2 id="profile-title" style="font-family:var(--font-title);font-size:1.35rem;margin:0;color:var(--color-gold-200)">Votre profil</h2>
+    </div>
+    <p id="profile-intro" class="profile-intro hidden">Choisissez un nom, un avatar et votre drapeau. Tout est enregistré sur cet appareil.</p>
+
+    <label class="profile-field-label" for="profile-name">Pseudo</label>
+    <input id="profile-name" type="text" maxlength="16" autocomplete="nickname" placeholder="Votre nom" aria-label="Pseudo" onkeydown="if(event.key==='Enter'){event.preventDefault();saveProfile();}">
+
+    <div class="profile-field-label">Avatar</div>
+    <div class="avatar-grid" id="avatar-grid" role="listbox" aria-label="Avatars"></div>
+
+    <label class="profile-field-label" for="profile-country">Pays</label>
+    <select id="profile-country" class="setting-select profile-country" aria-label="Pays"></select>
+
+    <button type="button" class="btn primary-btn w-100" onclick="saveProfile()" style="margin-top:1.25rem">Enregistrer</button>
+    <button type="button" class="rb" id="profile-skip" onclick="skipProfile()" style="margin-top:0.5rem">Plus tard</button>
+  </div>
+</div>
+
+<!-- ═══════════════════════════════════════════════════════════
+     STATS / MATCH HISTORY
+     ═══════════════════════════════════════════════════════════ -->
+<div id="history-overlay" class="overlay hidden hero-bg" role="dialog" aria-modal="true" aria-labelledby="history-title">
+  <div class="kente-accent"></div>
+  <div class="menu-box premium-card history-panel">
+    <div style="display:flex;align-items:center;gap:1rem;margin-bottom:1.25rem;text-align:left">
+      <button type="button" class="icon-btn" onclick="closeHistory()" aria-label="Fermer">←</button>
+      <h2 id="history-title" style="font-family:var(--font-title);font-size:1.35rem;margin:0;color:var(--color-gold-200)">Stats &amp; historique</h2>
+    </div>
+
+    <div class="stats-grid" id="stats-grid"></div>
+    <div class="ai-stats" id="ai-stats"></div>
+
+    <div class="history-title" style="text-align:left;margin:1.25rem 0 0.75rem">Classement</div>
+    <div class="leaderboard-list" id="leaderboard-list"></div>
+
+    <div class="history-title" style="text-align:left;margin:1.25rem 0 0.75rem">Parties récentes</div>
+    <div class="match-list" id="match-list"></div>
+    <p id="match-empty" class="profile-intro">Aucune partie enregistrée pour l’instant. Jouez une partie pour remplir cet historique.</p>
+  </div>
+</div>
 
 <!-- ═══════════════════════════════════════════════════════════
      GAME SCREEN
@@ -349,7 +503,7 @@
             </div>
             <div class="sub-info">
               <span class="flag" id="flag-ai" aria-hidden="true">🇨🇲</span>
-              <span class="elo" id="elo-ai" aria-label="ELO">1200</span>
+              <span class="elo" id="elo-ai" aria-label="ELO">800</span>
               <span id="diff-tag" style="font-size:0.72rem;color:var(--color-gold-300);font-weight:600;letter-spacing:0.5px;display:none;"></span>
               <span class="ping-indicator" id="ping-ai" aria-hidden="true">
                 <span class="ping-bar">
@@ -462,6 +616,7 @@
 <script src="/socket.io/socket.io.js"></script>
 <script src="sounds.js"></script>
 <script src="animations.js"></script>
+<script src="profile.js"></script>
 <script src="script.js"></script>
 
 </body>

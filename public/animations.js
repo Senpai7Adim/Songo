@@ -274,7 +274,7 @@ const Animations = (function () {
   }
 
   /* ── Show rich end-of-game modal ─────────────────────────── */
-  function showEndModal({ result, yourScore, oppScore, yourName, oppName }) {
+  function showEndModal({ result, yourScore, oppScore, yourName, oppName, eloDelta, newElo, rated }) {
     const overlay = document.getElementById('end-modal-overlay');
     const modal   = document.getElementById('end-modal');
     if (!overlay || !modal) return;
@@ -314,6 +314,21 @@ const Animations = (function () {
       titleEl.textContent = 'Égalité !';
       subEl.textContent   = `${yourScore} graines chacun`;
       animateDraw();
+    }
+
+    const eloBox = document.getElementById('end-elo');
+    const deltaEl = document.getElementById('end-elo-delta');
+    const newEl = document.getElementById('end-elo-new');
+    if (eloBox && deltaEl && newEl) {
+      if (rated && eloDelta !== undefined && eloDelta !== null) {
+        const d = Number(eloDelta) || 0;
+        deltaEl.textContent = (d > 0 ? '+' : '') + d;
+        deltaEl.className = 'end-elo-delta ' + (d > 0 ? 'up' : d < 0 ? 'down' : 'flat');
+        newEl.textContent = String(newElo);
+        eloBox.classList.remove('hidden');
+      } else {
+        eloBox.classList.add('hidden');
+      }
     }
 
     overlay.classList.remove('hidden');
